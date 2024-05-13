@@ -10,8 +10,9 @@ import java.lang.annotation.*;
 @Retention(RetentionPolicy.RUNTIME)
 public @interface RouteMapping {
     String path() default "";
+    // damn ! HttpMethod in Vertx has already changed ,so use this Class<? extends HttpMethod> to replace
     Class<? extends HttpMethod> method() default HttpMethod.class;
-    boolean async() default false;
+    boolean block() default false;
     String[] consumes() default {};
     String[] produces() default {};
     String desc() default "";

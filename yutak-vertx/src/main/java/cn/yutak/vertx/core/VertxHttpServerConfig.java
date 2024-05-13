@@ -49,7 +49,7 @@ public class VertxHttpServerConfig {
     /**
      * 消息转换器
      */
-    private List<MessageConvertor> messageConverterList;
+    private List<MessageConvertor> messageConvertorList;
 
 
     /**
