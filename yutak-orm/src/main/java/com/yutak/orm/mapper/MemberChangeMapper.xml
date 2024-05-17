@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yutak.orm.mapper.MemberChangeMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.yutak.orm.domain.MemberChange">
+        <id column="id" property="id" />
+        <result column="clone_no" property="cloneNo" />
+        <result column="channel_id" property="channelId" />
+        <result column="channel_type" property="channelType" />
+        <result column="max_version" property="maxVersion" />
+        <result column="created_at" property="createdAt" />
+        <result column="updated_at" property="updatedAt" />
+    </resultMap>
+
+</mapper>

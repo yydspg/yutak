@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yutak.orm.mapper.ConversationExtraMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.yutak.orm.domain.ConversationExtra">
+        <id column="id" property="id" />
+        <result column="uid" property="uid" />
+        <result column="channel_id" property="channelId" />
+        <result column="channel_type" property="channelType" />
+        <result column="browse_to" property="browseTo" />
+        <result column="keep_message_seq" property="keepMessageSeq" />
+        <result column="keep_offset_y" property="keepOffsetY" />
+        <result column="created_at" property="createdAt" />
+        <result column="updated_at" property="updatedAt" />
+        <result column="draft" property="draft" />
+        <result column="version" property="version" />
+    </resultMap>
+
+</mapper>

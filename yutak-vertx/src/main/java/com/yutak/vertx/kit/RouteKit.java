@@ -47,16 +47,17 @@ public class RouteKit {
         }
         return path;
     }
-    // TODO  :  focus this method ,try to figure out its role
+
     public static void resolveRouteMethodHandler(Method method, Object instance, VertxHttpServerConfig vHttpServerConfig, RouteInfo routeInfo) {
         try {
             // check method is blocked
             routeInfo.setBlocked(judgeMethodBlock(method));
-
+            // bind JSON handler
             if(method.isAnnotationPresent(ResBody.class) || method.getDeclaringClass().isAnnotationPresent(ResBody.class)) {
                 routeInfo.setMethodHandler(HandlerWrapper.JSONWrapper(vHttpServerConfig,method,instance));
                 return ;
             }
+            // bind Template handler
             TemplateBody routeAnnotation = (TemplateBody) getAnnotation(method, TemplateBody.class);
             if(routeAnnotation != null) {
                 routeInfo.setMethodHandler(HandlerWrapper.templateWrapper(vHttpServerConfig,method,instance,routeAnnotation));
@@ -72,6 +73,7 @@ public class RouteKit {
         }
         throw new VertxException("route handler not support");
     }
+    // judge current routeHandler whether block
     public static boolean judgeMethodBlock(Method method) {
         /*
         logic of judgement:

@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yutak.orm.mapper.GiteeUserMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.yutak.orm.domain.GiteeUser">
+        <id column="id" property="id" />
+        <result column="login" property="login" />
+        <result column="name" property="name" />
+        <result column="email" property="email" />
+        <result column="bio" property="bio" />
+        <result column="avatar_url" property="avatarUrl" />
+        <result column="blog" property="blog" />
+        <result column="events_url" property="eventsUrl" />
+        <result column="followers" property="followers" />
+        <result column="followers_url" property="followersUrl" />
+        <result column="following" property="following" />
+        <result column="following_url" property="followingUrl" />
+        <result column="gists_url" property="gistsUrl" />
+        <result column="html_url" property="htmlUrl" />
+        <result column="member_role" property="memberRole" />
+        <result column="organizations_url" property="organizationsUrl" />
+        <result column="public_gists" property="publicGists" />
+        <result column="public_repos" property="publicRepos" />
+        <result column="received_events_url" property="receivedEventsUrl" />
+        <result column="remark" property="remark" />
+        <result column="repos_url" property="reposUrl" />
+        <result column="stared" property="stared" />
+        <result column="starred_url" property="starredUrl" />
+        <result column="subscriptions_url" property="subscriptionsUrl" />
+        <result column="url" property="url" />
+        <result column="watched" property="watched" />
+        <result column="weibo" property="weibo" />
+        <result column="type" property="type" />
+        <result column="gitee_created_at" property="giteeCreatedAt" />
+        <result column="gitee_updated_at" property="giteeUpdatedAt" />
+        <result column="created_at" property="createdAt" />
+        <result column="updated_at" property="updatedAt" />
+    </resultMap>
+
+</mapper>

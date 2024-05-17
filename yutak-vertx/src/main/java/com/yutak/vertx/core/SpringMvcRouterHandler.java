@@ -41,8 +41,9 @@ public class SpringMvcRouterHandler {
     public Router routerHandle() {
         // cors config
         Router router = httpServerConfig.getRouter();
+        // config cors
         router.route().handler(CorsHandler.create()
-                .allowedMethods(new HashSet<>() {{
+                .allowedMethods(new HashSet<HttpMethod>() {{
                     add(HttpMethod.GET);
                     add(HttpMethod.POST);
                     add(HttpMethod.OPTIONS);
@@ -50,7 +51,8 @@ public class SpringMvcRouterHandler {
                     add(HttpMethod.DELETE);
                     add(HttpMethod.HEAD);
                 }}));
-        router.route().handler(BodyHandler.create(true));
+        // request body handler --> json
+        router.route().handler(BodyHandler.create(false));
         // init Interceptor
         initInterceptor(router);
         // init message Convertor
@@ -86,6 +88,7 @@ public class SpringMvcRouterHandler {
         if(path == null || path.length() == 0){
             route = router.route();
         }else route = router.route(path);
+        // register preHandler
         route.order(Integer.MIN_VALUE).handler(ctx->{
             HttpServerResponse response = ctx.response();
             if(response.ended()) return;
@@ -175,10 +178,13 @@ public class SpringMvcRouterHandler {
         Set<Object> routeHandlers = beanFactory.getTypesAnnotatedWith(RouteHandler.class);
         if(routeHandlers == null || routeHandlers.size() == 0) return;
         routeHandlers.forEach(handler->{
+            // extract current RouteHandler route info
             List<RouteInfo> routeInfos = extractRouteInfos(handler.getClass());
             routeInfos.stream().sorted(Comparator.comparingInt(RouteInfo::getOrder)).forEach(routeInfo->{
+                // binding method handler
                 Handler<RoutingContext> methodHandler = routeInfo.getMethodHandler();
                 Route route = router.route(routeInfo.getRouteMethod(), routeInfo.getRoutePath());
+                // set blocking handler ,such as sql execute handler
                 if(routeInfo.isBlocked()) route.blockingHandler(methodHandler);
                 else route.handler(methodHandler);
                 String[] consumes = routeInfo.getConsumes();

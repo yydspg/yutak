@@ -7,6 +7,8 @@ import com.yutak.vertx.core.VertxCS;
 import com.yutak.vertx.core.VertxHttpServerConfig;
 import com.yutak.vertx.start.ServerBoot;
 import io.vertx.core.Vertx;
+import io.vertx.core.VertxOptions;
+import org.mybatis.spring.annotation.MapperScan;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
@@ -19,13 +21,16 @@ import org.springframework.context.support.ClassPathXmlApplicationContext;
 
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
-
-@SpringBootApplication(exclude = { DataSourceAutoConfiguration.class },scanBasePackages = {"com.yutak.vertx","com.yutak.server"})
+@SpringBootApplication(scanBasePackages = {"com.yutak.vertx","com.yutak.orm","com.yutak.server"})
+@MapperScan("com.yutak.orm.mapper")
 public class YutakServerApplication {
         private static final Logger log = LoggerFactory.getLogger(YutakServerApplication.class);
 
     public static void main(String[] args) {
         VertxHttpServerConfig vertxHttpServerConfig = new VertxHttpServerConfig();
+        VertxOptions vertxOptions = new VertxOptions();
+        vertxOptions.setEventLoopPoolSize(1);
+        vertxOptions.setWorkerPoolSize(1);
 //        SpringApplication application = new SpringApplication(YutakServerApplication.class);
 //        ConfigurableApplicationContext run = application.run(args);
 //        ConfigurableListableBeanFactory beanFactory = run.getBeanFactory();
@@ -37,8 +42,8 @@ public class YutakServerApplication {
         SpringApplication app = new SpringApplication(YutakServerApplication.class);
         ConfigurableApplicationContext context = app.run(args);
         SpringBeanFactory springBeanFactory = context.getBean(SpringBeanFactory.class);
-        Demo bean = context.getBean(Demo.class);
-        log.info("bean: {}", bean);
+//        Demo bean = context.getBean(Demo.class);
+//        log.info("bean: {}", bean);
         vertxHttpServerConfig.setBeanFactory(springBeanFactory);
         vertxHttpServerConfig.setHttpPort(10001);
         vertxHttpServerConfig.setBasePackages("com.yutak.server");

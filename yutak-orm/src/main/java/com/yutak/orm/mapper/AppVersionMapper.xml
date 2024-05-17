@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yutak.orm.mapper.AppVersionMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.yutak.orm.domain.AppVersion">
+        <id column="id" property="id" />
+        <result column="app_version" property="appVersion" />
+        <result column="os" property="os" />
+        <result column="is_force" property="isForce" />
+        <result column="update_desc" property="updateDesc" />
+        <result column="download_url" property="downloadUrl" />
+        <result column="created_at" property="createdAt" />
+        <result column="updated_at" property="updatedAt" />
+        <result column="signature" property="signature" />
+    </resultMap>
+
+</mapper>

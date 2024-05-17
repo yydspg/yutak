@@ -17,7 +17,7 @@ import java.util.Objects;
 import java.util.function.Consumer;
 
 public class ServerBoot {
-        private static final Logger log = LoggerFactory.getLogger(ServerBoot.class);
+    private static final Logger log = LoggerFactory.getLogger(ServerBoot.class);
     public static void start(String basepackages, Integer httpPort, Consumer<SpringMvcRouterHandler> before, Consumer<SpringMvcRouterHandler> after) {
         VertxHttpServerConfig serverConfig = new VertxHttpServerConfig();
 
@@ -25,7 +25,7 @@ public class ServerBoot {
         serverConfig.setBasePackages(basepackages);
         start(serverConfig, before, after);
     }
-
+    // config vertx
     public static void start(VertxHttpServerConfig serverConfig, Consumer<SpringMvcRouterHandler> before, Consumer<SpringMvcRouterHandler> after) {
         resolveDefaultServerConfig(serverConfig);
         SpringMvcRouterHandler springMvcRouterHandler = new SpringMvcRouterHandler(serverConfig);
@@ -34,24 +34,29 @@ public class ServerBoot {
         serverConfig.getVertx().deployVerticle(vertxHttpServerVerticle);
     }
     private static void resolveDefaultServerConfig(VertxHttpServerConfig serverConfig) {
+        // set base package
         if (StringKit.isEmpty(serverConfig.getBasePackages())) {
             throw new VertxException("basePackages must not null");
         }
         if (Objects.isNull(serverConfig.getBeanFactory())) {
 //            serverConfig.setBeanFactory(new SpringBeanFactory(serverConfig.getBasePackages()));
         }
+        //set http port
         if (Objects.isNull(serverConfig.getHttpPort())) {
             serverConfig.setHttpPort(VertxCS.DEFAULT_SERVER_PORT);
         }
+        // set bus connect timeout
         if (Objects.isNull(serverConfig.getEventBusconnectTimeout())) {
             serverConfig.setEventBusconnectTimeout(VertxCS.DEFAULT_EVENTBUS_CONNECTTIMEOUT);
         }
+        //set workPoolSize
         if (Objects.isNull(serverConfig.getWorkPoolSize())) {
             serverConfig.setWorkPoolSize(Runtime.getRuntime().availableProcessors() * 2 + 1);
         }
         if (StringKit.isEmpty(serverConfig.getStaticDir())) {
             serverConfig.setStaticDir(VertxCS.DEALUT_STATIC_DIR);
         }
+        // set vertx
         if (Objects.isNull(serverConfig.getVertx())) {
             EventBusOptions eventBusOptions = new EventBusOptions();
             eventBusOptions.setConnectTimeout(serverConfig.getEventBusconnectTimeout());
@@ -59,14 +64,10 @@ public class ServerBoot {
                     .setEventBusOptions(eventBusOptions));
             serverConfig.setVertx(vertx);
         }
+        // set router
         if (Objects.isNull(serverConfig.getRouter())) {
             serverConfig.setRouter(Router.router(serverConfig.getVertx()));
         }
-
-        if (StringKit.isEmpty(serverConfig.getStaticDir())) {
-            serverConfig.setStaticDir(VertxCS.DEALUT_STATIC_DIR);
-        }
-
     }
 
 

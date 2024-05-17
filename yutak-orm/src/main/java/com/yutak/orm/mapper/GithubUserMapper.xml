@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yutak.orm.mapper.GithubUserMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.yutak.orm.domain.GithubUser">
+        <id column="id" property="id" />
+        <result column="login" property="login" />
+        <result column="node_id" property="nodeId" />
+        <result column="avatar_url" property="avatarUrl" />
+        <result column="gravatar_id" property="gravatarId" />
+        <result column="url" property="url" />
+        <result column="html_url" property="htmlUrl" />
+        <result column="followers_url" property="followersUrl" />
+        <result column="following_url" property="followingUrl" />
+        <result column="gists_url" property="gistsUrl" />
+        <result column="starred_url" property="starredUrl" />
+        <result column="subscriptions_url" property="subscriptionsUrl" />
+        <result column="organizations_url" property="organizationsUrl" />
+        <result column="repos_url" property="reposUrl" />
+        <result column="events_url" property="eventsUrl" />
+        <result column="received_events_url" property="receivedEventsUrl" />
+        <result column="type" property="type" />
+        <result column="site_admin" property="siteAdmin" />
+        <result column="name" property="name" />
+        <result column="company" property="company" />
+        <result column="blog" property="blog" />
+        <result column="location" property="location" />
+        <result column="email" property="email" />
+        <result column="hireable" property="hireable" />
+        <result column="bio" property="bio" />
+        <result column="twitter_username" property="twitterUsername" />
+        <result column="public_repos" property="publicRepos" />
+        <result column="public_gists" property="publicGists" />
+        <result column="followers" property="followers" />
+        <result column="following" property="following" />
+        <result column="github_created_at" property="githubCreatedAt" />
+        <result column="github_updated_at" property="githubUpdatedAt" />
+        <result column="private_gists" property="privateGists" />
+        <result column="total_private_repos" property="totalPrivateRepos" />
+        <result column="owned_private_repos" property="ownedPrivateRepos" />
+        <result column="disk_usage" property="diskUsage" />
+        <result column="collaborators" property="collaborators" />
+        <result column="two_factor_authentication" property="twoFactorAuthentication" />
+        <result column="created_at" property="createdAt" />
+        <result column="updated_at" property="updatedAt" />
+    </resultMap>
+
+</mapper>

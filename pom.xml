@@ -7,21 +7,22 @@
     <artifactId>yutak</artifactId>
     <packaging>pom</packaging>
 
-
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>3.2.5</version>
+        <relativePath/> <!-- lookup parent from repository -->
+    </parent>
 
     <name>yutak</name>
     <version>Final</version>
     <description>yutak</description>
 
-    <parent>
-        <groupId>org.springframework.boot</groupId>
-        <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.2.2</version>
-    </parent>
-
     <modules>
         <module>yutak-server</module>
         <module>yutak-vertx</module>
+        <module>codec</module>
+        <module>yutak-orm</module>
     </modules>
 
 
@@ -29,9 +30,8 @@
         <java.version>17</java.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <jjwt.version>0.9.1</jjwt.version>
-        <mybatis.plus.starter.version>3.5.5</mybatis.plus.starter.version>
-        <fastjson2.version>2.0.42</fastjson2.version>
-        <knife4j.version>4.3.0</knife4j.version>
+        <mybatis.pluss.spring3.starter.version>3.5.5</mybatis.pluss.spring3.starter.version>
+        <spring.boot.version>3.2.5</spring.boot.version>
 
     </properties>
 
@@ -39,15 +39,22 @@
         <dependencies>
             <dependency>
                 <groupId>org.springframework.boot</groupId>
-                <artifactId>spring-boot-dependencies</artifactId>
-                <version>3.2.4</version>
-                <type>pom</type>
-                <scope>import</scope>
+                <artifactId>spring-boot-starter</artifactId>
+                <version>3.2.5</version>
+            </dependency>
+<!--            <dependency>-->
+<!--                <groupId>com.baomidou</groupId>-->
+<!--                <artifactId>mybatis-plus-boot-starter</artifactId>-->
+<!--                <version>${mybatis.plus.starter.version}</version>-->
+<!--            </dependency>-->
+            <dependency>
+                <groupId>mysql</groupId>
+                <artifactId>mysql-connector-j</artifactId>
             </dependency>
             <dependency>
                 <groupId>com.baomidou</groupId>
-                <artifactId>mybatis-plus-boot-starter</artifactId>
-                <version>${mybatis.plus.starter.version}</version>
+                <artifactId>mybatis-plus-spring-boot3-starter</artifactId>
+                <version>${mybatis.pluss.spring3.starter.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

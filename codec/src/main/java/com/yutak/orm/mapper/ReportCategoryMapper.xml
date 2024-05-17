@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yutak.orm.mapper.ReportCategoryMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.yutak.orm.domain.ReportCategory">
+        <id column="id" property="id" />
+        <result column="category_no" property="categoryNo" />
+        <result column="category_name" property="categoryName" />
+        <result column="parent_category_no" property="parentCategoryNo" />
+        <result column="created_at" property="createdAt" />
+        <result column="updated_at" property="updatedAt" />
+        <result column="category_ename" property="categoryEname" />
+    </resultMap>
+
+</mapper>

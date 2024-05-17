@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yutak.orm.mapper.UserMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.yutak.orm.domain.User">
+        <id column="id" property="id" />
+        <result column="uid" property="uid" />
+        <result column="name" property="name" />
+        <result column="short_no" property="shortNo" />
+        <result column="short_status" property="shortStatus" />
+        <result column="sex" property="sex" />
+        <result column="robot" property="robot" />
+        <result column="category" property="category" />
+        <result column="role" property="role" />
+        <result column="username" property="username" />
+        <result column="password" property="password" />
+        <result column="zone" property="zone" />
+        <result column="phone" property="phone" />
+        <result column="chat_pwd" property="chatPwd" />
+        <result column="lock_screen_pwd" property="lockScreenPwd" />
+        <result column="lock_after_minute" property="lockAfterMinute" />
+        <result column="vercode" property="vercode" />
+        <result column="is_upload_avatar" property="isUploadAvatar" />
+        <result column="qr_vercode" property="qrVercode" />
+        <result column="device_lock" property="deviceLock" />
+        <result column="search_by_phone" property="searchByPhone" />
+        <result column="search_by_short" property="searchByShort" />
+        <result column="new_msg_notice" property="newMsgNotice" />
+        <result column="msg_show_detail" property="msgShowDetail" />
+        <result column="voice_on" property="voiceOn" />
+        <result column="shock_on" property="shockOn" />
+        <result column="mute_of_app" property="muteOfApp" />
+        <result column="offline_protection" property="offlineProtection" />
+        <result column="version" property="version" />
+        <result column="status" property="status" />
+        <result column="bench_no" property="benchNo" />
+        <result column="created_at" property="createdAt" />
+        <result column="updated_at" property="updatedAt" />
+        <result column="email" property="email" />
+        <result column="app_id" property="appId" />
+        <result column="is_destroy" property="isDestroy" />
+        <result column="wx_openid" property="wxOpenid" />
+        <result column="wx_unionid" property="wxUnionid" />
+        <result column="gitee_uid" property="giteeUid" />
+        <result column="github_uid" property="githubUid" />
+        <result column="web3_public_key" property="web3PublicKey" />
+        <result column="msg_expire_second" property="msgExpireSecond" />
+    </resultMap>
+
+</mapper>

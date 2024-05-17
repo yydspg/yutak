@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yutak.orm.mapper.SignalIdentitiesMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.yutak.orm.domain.SignalIdentities">
+        <id column="id" property="id" />
+        <result column="uid" property="uid" />
+        <result column="registration_id" property="registrationId" />
+        <result column="identity_key" property="identityKey" />
+        <result column="signed_prekey_id" property="signedPrekeyId" />
+        <result column="signed_pubkey" property="signedPubkey" />
+        <result column="signed_signature" property="signedSignature" />
+        <result column="created_at" property="createdAt" />
+        <result column="updated_at" property="updatedAt" />
+    </resultMap>
+
+</mapper>
