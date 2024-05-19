@@ -32,4 +32,14 @@ public class ResKit {
 //            Future.succeededFuture();
 //        });
     }
+    public static void error(RoutingContext ctx,String msg) {
+        JsonObject res = new JsonObject();
+        res.put("timestamp", System.currentTimeMillis());
+        res.put("error", msg);
+        ctx.response().setStatusCode(500).end(res.toString());
+    }
+    public static void success(RoutingContext ctx,Object o) {
+        JsonObject.mapFrom(o).put("timestamp", System.currentTimeMillis());
+        ctx.response().setStatusCode(200).end(JsonObject.mapFrom(o).encode());
+    }
 }

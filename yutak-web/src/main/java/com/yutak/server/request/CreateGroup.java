@@ -9,5 +9,5 @@ import java.util.List;
 @Setter
 public class CreateGroup {
     private String groupName;
-    private String uids;
+    private List<String> uids;
 }

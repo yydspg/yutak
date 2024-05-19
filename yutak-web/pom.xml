@@ -10,7 +10,7 @@
     </parent>
 
 
-    <artifactId>yutak-server</artifactId>
+    <artifactId>yutak-web</artifactId>
     <version>0.0.1</version>
     <name>yutak-server</name>
 

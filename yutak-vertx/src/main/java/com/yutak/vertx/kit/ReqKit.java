@@ -52,4 +52,5 @@ public class ReqKit {
         else if(type == Byte.class) f.set(o,Byte.valueOf(h.getFormAttribute(f.getName())));
         else if(type == Short.class) f.set(o,Short.valueOf(h.getFormAttribute(f.getName())));
     }
+
 }
