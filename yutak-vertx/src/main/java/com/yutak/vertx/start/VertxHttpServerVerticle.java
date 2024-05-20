@@ -1,7 +1,7 @@
 package com.yutak.vertx.start;
 
 import com.yutak.vertx.core.JSONMessageConvertor;
-import com.yutak.vertx.core.SpringMvcRouterHandler;
+import com.yutak.vertx.core.VertxMvcRouterHandler;
 import com.yutak.vertx.core.VertxHttpServerConfig;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.http.HttpServer;
@@ -15,10 +15,10 @@ public class VertxHttpServerVerticle extends AbstractVerticle {
 
     private HttpServer httpServer;
 
-    private Consumer<SpringMvcRouterHandler> after;
-    private SpringMvcRouterHandler routerHandlerRegister;
+    private Consumer<VertxMvcRouterHandler> after;
+    private VertxMvcRouterHandler routerHandlerRegister;
 
-    public VertxHttpServerVerticle(SpringMvcRouterHandler routerHandlerRegister, Consumer<SpringMvcRouterHandler> after) {
+    public VertxHttpServerVerticle(VertxMvcRouterHandler routerHandlerRegister, Consumer<VertxMvcRouterHandler> after) {
         this.after = after;
         this.routerHandlerRegister = routerHandlerRegister;
     }
@@ -31,6 +31,7 @@ public class VertxHttpServerVerticle extends AbstractVerticle {
         routerHandlerRegister.routerHandle();
         after.accept(routerHandlerRegister);
         // default JSON convertor
+        // TODO  :  此处应该可以被关闭
         routerHandlerRegister.registerMessageConverter(new JSONMessageConvertor());
         Router router = serverConfig.getRouter();
         Arrays.stream(serverConfig.getStaticDir().split(",")).forEach(staticDir -> {

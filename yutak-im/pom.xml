@@ -10,7 +10,13 @@
     </parent>
 
     <artifactId>yutak-im</artifactId>
-
+    <dependencies>
+        <dependency>
+            <groupId>com.yutak</groupId>
+            <artifactId>yutak-vertx</artifactId>
+            <version>0.0.1</version>
+        </dependency>
+    </dependencies>
     <properties>
         <maven.compiler.source>17</maven.compiler.source>
         <maven.compiler.target>17</maven.compiler.target>

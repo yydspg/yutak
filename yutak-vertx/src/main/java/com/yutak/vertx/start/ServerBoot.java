@@ -1,7 +1,6 @@
 package com.yutak.vertx.start;
 
-import com.yutak.vertx.core.SpringBeanFactory;
-import com.yutak.vertx.core.SpringMvcRouterHandler;
+import com.yutak.vertx.core.VertxMvcRouterHandler;
 import com.yutak.vertx.core.VertxCS;
 import com.yutak.vertx.core.VertxHttpServerConfig;
 import com.yutak.vertx.kit.StringKit;
@@ -18,7 +17,7 @@ import java.util.function.Consumer;
 
 public class ServerBoot {
     private static final Logger log = LoggerFactory.getLogger(ServerBoot.class);
-    public static void start(String basepackages, Integer httpPort, Consumer<SpringMvcRouterHandler> before, Consumer<SpringMvcRouterHandler> after) {
+    public static void start(String basepackages, Integer httpPort, Consumer<VertxMvcRouterHandler> before, Consumer<VertxMvcRouterHandler> after) {
         VertxHttpServerConfig serverConfig = new VertxHttpServerConfig();
 
         serverConfig.setHttpPort(httpPort);
@@ -26,11 +25,11 @@ public class ServerBoot {
         start(serverConfig, before, after);
     }
     // config vertx
-    public static void start(VertxHttpServerConfig serverConfig, Consumer<SpringMvcRouterHandler> before, Consumer<SpringMvcRouterHandler> after) {
+    public static void start(VertxHttpServerConfig serverConfig, Consumer<VertxMvcRouterHandler> before, Consumer<VertxMvcRouterHandler> after) {
         resolveDefaultServerConfig(serverConfig);
-        SpringMvcRouterHandler springMvcRouterHandler = new SpringMvcRouterHandler(serverConfig);
-        VertxHttpServerVerticle vertxHttpServerVerticle = new VertxHttpServerVerticle(springMvcRouterHandler, after);
-        before.accept(springMvcRouterHandler);
+        VertxMvcRouterHandler vertxMvcRouterHandler = new VertxMvcRouterHandler(serverConfig);
+        VertxHttpServerVerticle vertxHttpServerVerticle = new VertxHttpServerVerticle(vertxMvcRouterHandler, after);
+        before.accept(vertxMvcRouterHandler);
         serverConfig.getVertx().deployVerticle(vertxHttpServerVerticle);
     }
     private static void resolveDefaultServerConfig(VertxHttpServerConfig serverConfig) {

@@ -23,13 +23,13 @@ import java.lang.reflect.Method;
 import java.util.*;
 import java.util.stream.Stream;
 
-public class SpringMvcRouterHandler {
-    private static final Logger log = LoggerFactory.getLogger(SpringMvcRouterHandler.class);
+public class VertxMvcRouterHandler {
+    private static final Logger log = LoggerFactory.getLogger(VertxMvcRouterHandler.class);
     private final  BeanFactory beanFactory;
     private final VertxHttpServerConfig httpServerConfig;
     private final List<IReqInterceptor> interceptorList = new ArrayList<>();
 
-    public SpringMvcRouterHandler(VertxHttpServerConfig httpServerConfig) {
+    public VertxMvcRouterHandler(VertxHttpServerConfig httpServerConfig) {
         this.beanFactory = httpServerConfig.getBeanFactory();
         this.httpServerConfig = httpServerConfig;
     }
@@ -52,6 +52,7 @@ public class SpringMvcRouterHandler {
                     add(HttpMethod.HEAD);
                 }}));
         // request body handler --> json
+        // TODO  :  此处配置为开关式的，如下的这些配置都需要管理
         router.route().handler(BodyHandler.create(false));
         // init Interceptor
         initInterceptor(router);
