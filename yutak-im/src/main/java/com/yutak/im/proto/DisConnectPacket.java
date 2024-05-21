@@ -7,17 +7,17 @@ public class DisConnectPacket extends Packet {
     public String reason;
     public byte reasonCode;
     @Override
-    public byte getFrameType() {
+    public int getFrameType() {
         return 0;
     }
 
     @Override
-    public Buffer encode(byte version) {
+    public Buffer encode() {
         return null;
     }
 
     @Override
-    public Packet decode(byte version, Buffer buffer) {
+    public Packet decode( Buffer buffer) {
         return null;
     }
 }

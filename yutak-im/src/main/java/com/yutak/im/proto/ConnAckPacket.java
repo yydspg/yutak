@@ -11,17 +11,17 @@ public class ConnAckPacket extends Packet {
     public int NodeId        ; // 节点Id
 
     @Override
-    public byte getFrameType() {
-        return 0;
+    public int getFrameType() {
+        return CS.FrameType.CONNACK;
     }
 
     @Override
-    public Buffer encode(byte version) {
+    public Buffer encode() {
         return null;
     }
 
     @Override
-    public Packet decode(byte version, Buffer buffer) {
+    public Packet decode( Buffer buffer) {
         return null;
     }
 }

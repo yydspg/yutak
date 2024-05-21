@@ -9,8 +9,8 @@ public abstract class Packet {
     public boolean dup;
     public boolean hasServerVersion;
     public int frameSize;
-    public CS.FrameType frameType;
-    public abstract byte getFrameType();
-    public abstract Buffer encode(byte version);
-    public abstract Packet decode(byte version, Buffer buffer);
+    public int frameType;
+    public abstract int getFrameType();
+    public abstract Buffer encode();
+    public abstract Packet decode( Buffer buffer);
 }

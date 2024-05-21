@@ -13,17 +13,17 @@ public class SendPacket extends Packet {
    public String Topic      ; // 消息topic
    public byte[] Payload    ; // 消息内容
     @Override
-    public byte getFrameType() {
+    public int getFrameType() {
         return 0;
     }
 
     @Override
-    public Buffer encode(byte version) {
+    public Buffer encode() {
         return null;
     }
 
     @Override
-    public Packet decode(byte version, Buffer buffer) {
+    public Packet decode( Buffer buffer) {
         return null;
     }
 }

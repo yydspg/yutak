@@ -4,17 +4,17 @@ import io.vertx.core.buffer.Buffer;
 
 public class RecAckPacket extends Packet {
     @Override
-    public byte getFrameType() {
+    public int getFrameType() {
         return CS.FrameType.RECVACK;
     }
 
     @Override
-    public Buffer encode(byte version) {
+    public Buffer encode() {
         return null;
     }
 
     @Override
-    public Packet decode(byte version, Buffer buffer) {
+    public Packet decode( Buffer buffer) {
         return null;
     }
 }
