@@ -63,4 +63,5 @@ public interface CS {
         byte ReasonNotSupportChannelType                         = 0;// 不支持的频道类型
         byte         ReasonDisband                               = 0;         // 频道已解散
     }
+
 }

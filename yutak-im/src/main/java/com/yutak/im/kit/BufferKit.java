@@ -1,7 +1,7 @@
 package com.yutak.im.kit;
 
-import com.yutak.im.proto.CS;
-import com.yutak.im.proto.Packet;
+import com.yutak.im.proto.*;
+import io.vertx.core.buffer.Buffer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -35,6 +35,22 @@ public class BufferKit {
         if(p.hasServerVersion) f |= 0x01;
         return (byte) f;
     }
+    public static Packet getPacket(Buffer b) {
+        byte fixHeader = b.getByte(0);
+        return switch (fixHeader & 0xf0) {
+            case CS.FrameType.PONG-> new PongPacket();
+            case CS.FrameType.PING-> new PingPacket();
+            case CS.FrameType.CONNACK-> new ConnAckPacket();
+            case CS.FrameType.CONNECT->new ConnectPacket();
+            case CS.FrameType.DISCONNECT-> new DisConnectPacket();
+            case CS.FrameType.RECV -> new RecvPacket();
+            case CS.FrameType.RECVACK -> new RecAckPacket();
+            case CS.FrameType.SUBACK -> new SubAckPacket();
+            case CS.FrameType.SUB -> new SubPacket();
+            case CS.FrameType.SEND -> new SendPacket();
+            default-> null;
+        };
+    }
     public static void debug(Packet p) {
         try {
             Class<? extends Packet> aClass = p.getClass();
@@ -53,7 +69,8 @@ public class BufferKit {
     public static void debug(Packet p,Packet p1) {
         try {
             Class<? extends Packet> aClass = p.getClass();
-            Field[] fields = aClass.getFields();
+            Field[] fields = aClass.getDeclaredFields();
+//            Field[] fields = aClass.getFields();
             Class<? extends Packet> aClass1 = p1.getClass();
             Field[] fields1 = aClass1.getFields();
             for (Field f : fields) {
@@ -61,7 +78,7 @@ public class BufferKit {
                 for (Field t : fields1) {
                     t.setAccessible(true);
                     if (t.getName().equals(f.getName()) || t.get(p1) == f.get(p)) {
-                        log.info(t.getName()+ " test success !");
+                        log.info(t.getName()+ " test success "+t.get(p));
                     }
                 }
             }

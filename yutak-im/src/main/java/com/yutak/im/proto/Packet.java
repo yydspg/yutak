@@ -8,7 +8,6 @@ public abstract class Packet {
     public boolean syncOnce;
     public boolean dup;
     public boolean hasServerVersion;
-    public int frameSize;
     public int frameType;
     public abstract int getFrameType();
     public abstract Buffer encode();

@@ -37,8 +37,7 @@ public class ConnectPacket extends Packet {
 
     @Override
     public Packet decode( Buffer buffer) {
-        int i = 0,t = 0;
-        BufferKit.decodeFixHeader(this,buffer.getByte(i++));
+        int i = 1,t = 0;
         this.deviceFlag = buffer.getByte(i++);
         t = i + buffer.getByte(i++) + 1;
         this.deviceID = buffer.getString(i,t);
