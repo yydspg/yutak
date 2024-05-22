@@ -10,6 +10,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.ConfigurableApplicationContext;
+
 @SpringBootApplication(scanBasePackages = {"com.yutak.vertx","com.yutak.orm","com.yutak.server"})
 @MapperScan("com.yutak.orm.mapper")
 public class YutakServerApplication {

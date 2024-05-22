@@ -64,4 +64,14 @@ public interface CS {
         byte         ReasonDisband                               = 0;         // 频道已解散
     }
 
+    interface ChannelType {
+        public byte Person 		   = 1;// ChannelTypePerson 个人频道
+        public byte Group           = 2; // 群组频道
+        public byte CustomerService = 3; // 客服频道
+        public byte Community       = 4; // 社区频道
+        public byte CommunityTopic  = 5; // 社区话题频道
+        public byte Info            = 6; // 资讯频道（有临时订阅者的概念，查看资讯的时候加入临时订阅，退出资讯的时候退出临时订阅）
+        public byte Data            = 7; // 数据频道
+    }
+
 }
