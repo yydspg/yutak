@@ -89,9 +89,9 @@ public class SendPacket extends Packet {
 
         SendPacket s2 = new SendPacket();
         s2.decode(encode);
-        Buffer encode1 = Protocol.encode(s1);
-        Packet decode = Protocol.decode(encode1);
-
-        BufferKit.debug(s1,decode);
+//        Buffer encode1 = Protocol.encode(s1);
+//        Packet decode = Protocol.decode(encode1);
+//
+//        BufferKit.debug(s1,decode);
     }
 }

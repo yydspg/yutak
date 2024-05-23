@@ -51,6 +51,12 @@ public class BufferKit {
             default-> null;
         };
     }
+    public static Packet decodePacket(Buffer b) {
+        Packet packet = getPacket(b);
+        if(packet == null) return null;
+        decodeFixHeader(packet,b.getByte(0));
+        return packet.decode(b);
+    }
     public static void debug(Packet p) {
         try {
             Class<? extends Packet> aClass = p.getClass();

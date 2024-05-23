@@ -2,6 +2,7 @@ package com.yutak.im.core;
 
 import com.yutak.im.domain.Conversation;
 import com.yutak.im.domain.Message;
+import lombok.SneakyThrows;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -28,7 +29,8 @@ public class ConversationManager {
         public Message message;
         public List<String> subscribers;
     }
-    public void pushMessage(Message message,List<String> subscribers) {
+    @SneakyThrows
+    public void pushMessage(Message message, List<String> subscribers) {
         if (!options.conversationConfig.recentOn) return;
         Bucket bucket = new Bucket();
         bucket.message = message;

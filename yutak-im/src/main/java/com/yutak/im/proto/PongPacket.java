@@ -22,9 +22,7 @@ public class PongPacket extends Packet {
 
     @Override
     public Packet decode( Buffer buffer) {
-        PongPacket p = new PongPacket();
-        BufferKit.decodeFixHeader(p,buffer.getByte(0));
-        return p;
+        return this;
     }
 
     public static void main(String[] args) {

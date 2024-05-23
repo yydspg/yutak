@@ -6,7 +6,7 @@ import com.yutak.im.domain.Stream;
 
 import java.util.List;
 
-public interface StoreApi {
+public interface Store {
     void open();
     void close();
     // user

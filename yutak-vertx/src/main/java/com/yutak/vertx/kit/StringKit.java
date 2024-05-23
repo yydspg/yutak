@@ -15,4 +15,12 @@ public class StringKit {
     public static boolean isNotEmpty(Collection collection) {
         return collection != null && collection.size() > 0;
     }
+    public static boolean same(String str1, String str2) {return str1 == null ? str2 == null : str1.equals(str2);}
+    public static boolean diff(String str1, String str2) {return str1 == null ? str2 != null : !str1.equals(str2);}
+
+    public static void main(String[] args) {
+        String a = ":";
+        String b = ":ewgf";
+        System.out.println(diff(a, b));
+    }
 }

@@ -1,13 +1,16 @@
 package com.yutak.im.core;
 
-import com.yutak.im.store.StoreApi;
 
+import com.yutak.im.store.Store;
+import io.vertx.core.net.NetServer;
+
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 
-public class Server {
+public class YutakNetServer {
     public Status status ;
     public Options options;
     public ConnectManager connectManager;
@@ -15,13 +18,25 @@ public class Server {
     public DeliveryManager deliveryManager;
     public SystemUIDManager systemUIDManager;
     public boolean started;
-    public long startTime = System.currentTimeMillis();
-    public Map<String,Boolean> ipBlockList = new ConcurrentHashMap<>();
-    private StoreApi store;
-
-    public Server() {
-
+    public LocalDateTime startTime ;
+    public Map<String,Boolean> IPBlockList ;
+    private Store store;
+    private NetServer netServer;
+    private final static YutakNetServer yutakNetServer;
+    static {
+        yutakNetServer = new YutakNetServer();
     }
+    private YutakNetServer() {
+        status = new Status();
+        connectManager = new ConnectManager();
+        IPBlockList = new ConcurrentHashMap<>();
+        startTime = LocalDateTime.now();
+    }
+
+    public static YutakNetServer get() {
+        return yutakNetServer;
+    }
+
     public static class Status {
         public AtomicLong inboundMessages;
         public AtomicLong outboundMessages;
@@ -29,21 +44,22 @@ public class Server {
         public AtomicLong sendBytes;
         public AtomicLong slowClients;
     }
+
     public void addBlockIp(String ip) {
-        ipBlockList.put(ip, true);
+        IPBlockList.put(ip, true);
     }
     public void removeBlockIp(String ip) {
-        ipBlockList.put(ip, false);
+        IPBlockList.put(ip, false);
     }
     public void initIpBlockList(){
         List<String> blockList = store.getIpBlockList();
         if(blockList == null) return;
         for(String ip : blockList){
-            ipBlockList.put(ip, true);
+            IPBlockList.put(ip, true);
         }
     }
     public void removeIpBlockList(){
-        ipBlockList.clear();
+        IPBlockList.clear();
     }
 
     public void start(){

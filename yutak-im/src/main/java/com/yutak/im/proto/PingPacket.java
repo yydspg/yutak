@@ -18,8 +18,6 @@ public class PingPacket extends Packet {
 
     @Override
     public Packet decode( Buffer buffer) {
-        PingPacket p = new PingPacket();
-        BufferKit.decodeFixHeader(p,buffer.getByte(0));
-        return p;
+        return this;
     }
 }

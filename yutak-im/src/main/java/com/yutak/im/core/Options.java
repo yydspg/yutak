@@ -1,5 +1,8 @@
 package com.yutak.im.core;
 
+import java.time.Duration;
+import java.time.LocalDateTime;
+
 public class Options {
     public long ID            ;      // 节点ID
     public String Mode        ;      // 模式 debug 测试 release 正式 bench 压力测试
@@ -10,12 +13,14 @@ public class Options {
 //    public String GinMode     ;      // gin框架的模式
     public String WSAddr      ;      // websocket 监听地址 例如：ws://0.0.0.0:5200
     public String WSSAddr     ;      // wss 监听地址 例如：wss://0.0.0.0:5210 websocket security
+    public boolean tokenAuthOn;  // 是否开启token验证 不配置将根据mode属性判断 debug模式下默认为false release模式为true
     public WSSConfig wssConfig;
     public MonitorConfig monitorConfig;
     public ChannelConfig channelConfig;
     public ConversationConfig conversationConfig;
     public ExternalConfig externalConfig;
-
+    public ManagerCount managerCount;
+    public Duration maxIdle = Duration.ofDays(1);
     public Options() {
 
     }
@@ -46,9 +51,14 @@ public class Options {
     }
     public static class ConversationConfig {
         public boolean recentOn             ;// 是否开启最近会话
-        public int CacheExpire              ;// 最近会话缓存过期时间 (这个是热数据缓存时间，并非最近会话数据的缓存时间)
-        public int SyncInterval             ;// 最近会话同步间隔
-        public int SyncOnce                 ;//  当多少最近会话数量发送变化就保存一次
-        public int UserMaxCount             ;// 每个用户最大最近会话数量 默认为500
+        public int cacheExpire              ;// 最近会话缓存过期时间 (这个是热数据缓存时间，并非最近会话数据的缓存时间)
+        public int syncInterval             ;// 最近会话同步间隔
+        public int syncOnce                 ;//  当多少最近会话数量发送变化就保存一次
+        public int userMaxCount             ;// 每个用户最大最近会话数量 默认为500
+    }
+    public static class ManagerCount {
+        public String token   ; // 管理者的token
+        public String UID     ; // 管理者的uid
+        public boolean on ; // 管理者的token是否开启
     }
 }

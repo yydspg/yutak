@@ -16,52 +16,52 @@ public interface CS {
         int SUBACK     =0xb0;                // 订阅确认
     }
     interface ReasonCode {
-        // ReasonSuccess 成功
-        byte ReasonSuccess                                       = 0;
-        // ReasonAuthFail 认证失败
-        byte         ReasonAuthFail                              = 0;
-        // ReasonSubscriberNotExist 订阅者在频道内不存在
-        byte ReasonSubscriberNotExist                            = 0;
-        // ReasonInBlacklist 在黑名单列表里
-        byte         ReasonInBlacklist                           = 0;
-        // ReasonChannelNotExist 频道不存在
-        byte ReasonChannelNotExist                               = 0;
-        // ReasonUserNotOnNode 用户没在节点上
-        byte         ReasonUserNotOnNode                         = 0;
-        // ReasonSenderOffline // 发送者离线了，这条消息将发不成功
-        byte ReasonSenderOffline                                 = 0;
-        // ReasonMsgKeyError 消息key错误 说明消息不合法
-        byte         ReasonMsgKeyError                           = 0;
-        // ReasonPayloadDecodeError payload解码失败
-        byte ReasonPayloadDecodeError                            = 0;
-        // ReasonForwardSendPacketError 转发发送包失败
-        byte         ReasonForwardSendPacketError                = 0;
-        // ReasonNotAllowSend 不允许发送消息
-        byte ReasonNotAllowSend                                  = 0;
-        // ReasonConnectKick 连接被踢
-        byte         ReasonConnectKick                           = 0;
-        // ReasonNotInWhitelist 没在白名单内
-        byte ReasonNotInWhitelist                                = 0;
+        // Success 成功
+        byte success                                       = 0;
+        // AuthFail 认证失败
+        byte         authFail                              = 0;
+        // SubscriberNotExist 订阅者在频道内不存在
+        byte SubscriberNotExist                            = 0;
+        // InBlacklist 在黑名单列表里
+        byte         InBlacklist                           = 0;
+        // ChannelNotExist 频道不存在
+        byte ChannelNotExist                               = 0;
+        // UserNotOnNode 用户没在节点上
+        byte         UserNotOnNode                         = 0;
+        // SenderOffline // 发送者离线了，这条消息将发不成功
+        byte SenderOffline                                 = 0;
+        // MsgKeyError 消息key错误 说明消息不合法
+        byte         MsgKeyError                           = 0;
+        // PayloadDecodeError payload解码失败
+        byte PayloadDecodeError                            = 0;
+        // ForwardSendPacketError 转发发送包失败
+        byte         ForwardSendPacketError                = 0;
+        // NotAllowSend 不允许发送消息
+        byte NotAllowSend                                  = 0;
+        // ConnectKick 连接被踢
+        byte         ConnectKick                           = 0;
+        // NotInWhitelist 没在白名单内
+        byte NotInWhitelist                                = 0;
         // 查询用户token错误
-        byte         ReasonQueryTokenError                       = 0;
+        byte         QueryTokenError                       = 0;
         // 系统错误
-        byte ReasonSystemError                                   = 0;
+        byte SystemError                                   = 0;
         // 错误的频道ID
-        byte         ReasonChannelIDError                        = 0;
-        // ReasonNodeMatchError 节点匹配错误
-        byte ReasonNodeMatchError                                = 0;
-        // ReasonNodeNotMatch 节点不匹配
-        byte         ReasonNodeNotMatch                          = 0;
+        byte         ChannelIDError                        = 0;
+        // NodeMatchError 节点匹配错误
+        byte NodeMatchError                                = 0;
+        // NodeNotMatch 节点不匹配
+        byte         NodeNotMatch                          = 0;
         // 频道被封禁
-        byte ReasonBan                                           = 0;
+        byte Ban                                           = 0;
         // 不支持的header
-        byte         ReasonNotSupportHeader                      = 0;
+        byte         NotSupportHeader                      = 0;
         // clientKey 是空的
-        byte ReasonClientKeyIsEmpty                              = 0;
+        byte ClientKeyIsEmpty                              = 0;
         // 速率限制
-        byte         ReasonRateLimit                             = 0;
-        byte ReasonNotSupportChannelType                         = 0;// 不支持的频道类型
-        byte         ReasonDisband                               = 0;         // 频道已解散
+        byte         RateLimit                             = 0;
+        byte NotSupportChannelType                         = 0;// 不支持的频道类型
+        byte         Disband                               = 0;         // 频道已解散
     }
 
     interface ChannelType {
@@ -73,5 +73,17 @@ public interface CS {
         public byte Info            = 6; // 资讯频道（有临时订阅者的概念，查看资讯的时候加入临时订阅，退出资讯的时候退出临时订阅）
         public byte Data            = 7; // 数据频道
     }
+    interface Device {
+        interface Level {
+            byte master = 1;
+            byte slave = 0;
+        }
 
+        interface Flag {
+            byte app = 0;
+            byte web = 1;
+            byte pc = 2;
+            byte sys = 3;
+        }
+    }
 }
