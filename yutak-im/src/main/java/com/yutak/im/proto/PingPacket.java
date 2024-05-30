@@ -1,6 +1,5 @@
 package com.yutak.im.proto;
 
-import com.yutak.im.kit.BufferKit;
 import io.vertx.core.buffer.Buffer;
 
 public class PingPacket extends Packet {
