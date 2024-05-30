@@ -8,14 +8,22 @@ import com.yutak.im.kit.BufferKit;
 import com.yutak.im.kit.SecurityKit;
 import com.yutak.im.proto.*;
 import com.yutak.im.store.Store;
+import com.yutak.im.test.Test;
 import com.yutak.vertx.kit.StringKit;
+import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
+import io.vertx.core.buffer.Buffer;
+import io.vertx.core.impl.VertxBuilder;
+import io.vertx.core.net.NetClient;
+import io.vertx.core.net.NetServer;
 import io.vertx.core.net.NetSocket;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class YutakNetBuilder {
@@ -33,6 +41,9 @@ public class YutakNetBuilder {
         return s -> {
             // ip block
             String remoteAddr = s.remoteAddress().host();
+            log.info("server connect success");
+            s.end();
+            if(1 == 1) return;
             if (YutakNetServer.get().IPBlockList.get(remoteAddr)) {
                 s.end();
                 return;
@@ -155,5 +166,41 @@ public class YutakNetBuilder {
                 }
             });
         };
+    }
+
+    public static void main(String[] args) {
+        Vertx vertx1 = Vertx.vertx();
+        NetServer netServer = vertx1.createNetServer();
+        YutakNetBuilder yutakNetBuilder = new YutakNetBuilder();
+        // lambda 执行时,不会创建多此 handler
+        netServer.connectHandler(yutakNetBuilder.netHandler());
+        netServer.listen(9001)
+                .onComplete(t->{
+                   if(t.failed()) {
+                       System.out.println("server start fail");
+                   }
+                   else System.out.println("server start success");
+                });
+        NetClient netClient = vertx1.createNetClient();
+        ScheduledThreadPoolExecutor pool = new ScheduledThreadPoolExecutor(1);
+        pool.scheduleAtFixedRate(()->{
+            Future<NetSocket> future = netClient.connect(9001, "127.0.0.1").onComplete(t -> {
+                if (t.succeeded()) System.out.println("client start success");
+                else System.out.println("client start fail");
+                NetSocket socket = t.result();
+                ConnectPacket c = new ConnectPacket();
+                c.UID = "cvasdffwefwe";
+                c.clientTimestamp = System.currentTimeMillis();
+                c.deviceID = "gradewefwef";
+                c.token = "segvefewfw";
+                c.deviceFlag = 1;
+                c.clientKey = "cefcefwefAWEF";
+                Buffer f = c.encode();
+                socket.write(f);
+                socket.end();
+                return;
+            });
+        },1,1, TimeUnit.SECONDS);
+
     }
 }

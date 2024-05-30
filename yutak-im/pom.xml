@@ -25,6 +25,11 @@
 <!--            <artifactId>bcprov-jdk15on</artifactId>-->
 <!--            <version>1.69</version>-->
 <!--        </dependency>-->
+<!--        <dependency>-->
+<!--            <groupId>org.apache.commons</groupId>-->
+<!--            <artifactId>commons-pool3</artifactId>-->
+<!--            <version>3.0.0</version>-->
+<!--        </dependency>-->
     </dependencies>
     <properties>
         <maven.compiler.source>17</maven.compiler.source>
