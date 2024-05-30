@@ -2,5 +2,6 @@
 <project version="4">
   <component name="SqlDialectMappings">
     <file url="file://$PROJECT_DIR$/doc/initSql/group.sql" dialect="GenericSQL" />
+    <file url="file://$PROJECT_DIR$/yutak-im/sql/init.sql" dialect="H2" />
   </component>
 </project>

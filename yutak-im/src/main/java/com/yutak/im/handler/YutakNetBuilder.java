@@ -12,6 +12,7 @@ import com.yutak.im.test.Test;
 import com.yutak.vertx.kit.StringKit;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
+import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.impl.VertxBuilder;
@@ -42,13 +43,14 @@ public class YutakNetBuilder {
             // ip block
             String remoteAddr = s.remoteAddress().host();
             log.info("server connect success");
-            s.end();
-            if(1 == 1) return;
-            if (YutakNetServer.get().IPBlockList.get(remoteAddr)) {
+//            s.end();
+//            if(1 == 1) return;
+            if (YutakNetServer.get().IPBlockList.get(remoteAddr) != null) {
                 s.end();
                 return;
             }
             s.handler(b->{
+                log.info("packet send");
                 // decode layer
                 Packet packet = BufferKit.decodePacket(b);
                 // check data packet,if return null means decode fail
@@ -61,119 +63,125 @@ public class YutakNetBuilder {
                     // connect status build
                     final ConnectPacket connectPacket = (ConnectPacket) packet;
                     // auth blocking execute !!!
-                    vertx.executeBlocking(()->{
-                        // verify client key
-                        if (StringKit.same(connectPacket.clientKey,"")) {
-                            return null;
-                        }
-                        // default salve
-                        byte deviceLevel = CS.Device.Level.slave;
-                        // verify token
-                        if(StringKit.same(options.managerCount.UID,connectPacket.clientKey)) {
-                            if(options.managerCount.on && ! StringKit.same(options.managerCount.token, connectPacket.token)) {
-                                log.error("connect token not true");
-                                return null;
+                    vertx.executeBlocking(promise -> {
+                            // verify client key
+                            if (StringKit.same(connectPacket.clientKey,"")) {
+                                return ;
                             }
-                        } else if (options.tokenAuthOn) {
-                            if (StringKit.same(connectPacket.token,"")) {
-                                log.error("token empty");
-                                return null;
+                            // default salve
+                            byte deviceLevel = CS.Device.Level.slave;
+                            // verify token
+                            if(StringKit.same(options.managerCount.UID,connectPacket.clientKey)) {
+                                if(options.managerCount.on && ! StringKit.same(options.managerCount.token, connectPacket.token)) {
+                                    log.error("connect token not true");
+                                    return;
+                                }
+                            } else if (options.tokenAuthOn) {
+                                if (StringKit.same(connectPacket.token,"")) {
+                                    log.error("token empty");
+                                    return ;
+                                }
+                                // TODO  :  构建一个本地的数据库，目前的打算是 h2 使用，用内存模式，以后学习下，现在先把业务写完
+                                String userToken = store.getUserToken(connectPacket.UID, connectPacket.deviceFlag);
+                                byte level = store.getUserDeviceLevel(connectPacket.UID, connectPacket.deviceFlag);
+                                if(StringKit.same(userToken,connectPacket.token)) {
+                                    log.error("token not same");
+                                    return ;
+                                }
+                                deviceLevel = level;
+                            } else {
+                                deviceLevel = CS.Device.Level.slave;
                             }
-                            // TODO  :  构建一个本地的数据库，目前的打算是 h2 使用，用内存模式，以后学习下，现在先把业务写完
-                            String userToken = store.getUserToken(connectPacket.UID, connectPacket.deviceFlag);
-                            byte level = store.getUserDeviceLevel(connectPacket.UID, connectPacket.deviceFlag);
-                            if(StringKit.same(userToken,connectPacket.token)) {
-                                log.error("token not same");
-                                return null;
-                            }
-                            deviceLevel = level;
-                        } else {
-                            deviceLevel = CS.Device.Level.slave;
-                        }
-                        // check user status
-                        Store.ChannelInfo channel = store.getChannel(connectPacket.UID, CS.ChannelType.Person);
+                            // check user status
+                            Store.ChannelInfo channel = store.getChannel(connectPacket.UID, CS.ChannelType.Person);
 
-                        if (channel == null) {
-                            return null;
-                        }
-                        if(channel.ban) {
-                            log.error("user status ban");
-                            return null;
-                        }
-                        // TODO  :  this security need more!!! 中间加密的一步没做呢！！！ aesIV...
-                        List<String> pair = SecurityKit.getPair();
+                            if (channel == null) {
+                                return ;
+                            }
+                            if(channel.ban) {
+                                log.error("user status ban");
+                                return ;
+                            }
+                            // TODO  :  this security need more!!! 中间加密的一步没做呢！！！ aesIV...
+                            List<String> pair = SecurityKit.getPair();
 
-                        // process device
-                        List<Conn> oldConns = connectManager.getConnectWithDeviceFlag(connectPacket.UID, connectPacket.deviceFlag);
-                        if(oldConns.size() > 0) {
-                            if(deviceLevel == CS.Device.Level.master) {
-                                // remove old device
-                                oldConns.forEach(conn->{
-                                    connectManager.removeConnect(conn.id);
-                                    // send disConnect packet to device which has been disConnect
-                                    if(StringKit.diff(conn.deviceID, connectPacket.deviceID)) {
-                                        log.info("remove old conn");
-                                        DisConnectPacket p = new DisConnectPacket();
-                                        p.reasonCode = CS.ReasonCode.ConnectKick;
-                                        p.reason = "login in other device";
-                                        // send disconnect packet
-                                        conn.netSocket.write(p.encode());
-                                    }
-                                    conn.close();
-                                });
-                                // slave service,just remove same device
-                            } else if (deviceLevel == CS.Device.Level.slave) {
-                                oldConns.forEach(conn->{
-                                    if(StringKit.same(conn.deviceID, connectPacket.deviceID)) {
-                                        log.info("remove old conn");
+                            // process device
+                            List<Conn> oldConns = connectManager.getConnectWithDeviceFlag(connectPacket.UID, connectPacket.deviceFlag);
+                            if(oldConns.size() > 0) {
+                                if(deviceLevel == CS.Device.Level.master) {
+                                    // remove old device
+                                    oldConns.forEach(conn->{
                                         connectManager.removeConnect(conn.id);
+                                        // send disConnect packet to device which has been disConnect
+                                        if(StringKit.diff(conn.deviceID, connectPacket.deviceID)) {
+                                            log.info("remove old conn");
+                                            DisConnectPacket p = new DisConnectPacket();
+                                            p.reasonCode = CS.ReasonCode.ConnectKick;
+                                            p.reason = "login in other device";
+                                            // send disconnect packet
+                                            conn.netSocket.write(p.encode());
+                                        }
                                         conn.close();
-                                    }
-                                });
+                                    });
+                                    // slave service,just remove same device
+                                } else if (deviceLevel == CS.Device.Level.slave) {
+                                    oldConns.forEach(conn->{
+                                        if(StringKit.same(conn.deviceID, connectPacket.deviceID)) {
+                                            log.info("remove slave conn");
+                                            connectManager.removeConnect(conn.id);
+                                            conn.close();
+                                        }
+                                    });
+                                }
                             }
-                        }
-                        // build Conn
-                        Conn conn = new Conn(idGenerator.get(), s.remoteAddress().host(), s);
-                        conn.auth = true;
-                        conn.deviceFlag = connectPacket.deviceFlag;
-                        conn.deviceID = connectPacket.deviceID;
-                        conn.uid = connectPacket.UID;
-                        conn.deviceLevel = deviceLevel;
-                        conn.maxIdle = options.maxIdle;
-                        // add conn
-                        connectManager.addConnect(conn);
+                            // build Conn
+                            Conn conn = new Conn(idGenerator.get(), s.remoteAddress().host(), s);
+                            conn.auth = true;
+                            conn.deviceFlag = connectPacket.deviceFlag;
+                            conn.deviceID = connectPacket.deviceID;
+                            conn.uid = connectPacket.UID;
+                            conn.deviceLevel = deviceLevel;
+                            conn.maxIdle = options.maxIdle;
+                            // add conn
+                            connectManager.addConnect(conn);
 
-                        ConnAckPacket p = new ConnAckPacket();
-                        BufferKit.encodeFixHeader(p);
-                        p.salt = "别看了，赶紧补上";
-                        p.serverKey = "...";
-                        p.reasonCode = CS.ReasonCode.success;
-                        p.timeDiff = 123;
-                        p.serverVersion = 1;
-                        p.hasServerVersion = true;
-                        // TODO  :  webhook
-                        return p;
-                    }).onComplete(res->{
-                        if(res.result() != null) {
-                            s.write(res.result().encode());
-                            return;
-                        }
-                        s.end();
-                    });
-                // other packet
-                } else {
+                            ConnAckPacket p = new ConnAckPacket();
+                            BufferKit.encodeFixHeader(p);
+                            p.salt = "别看了，赶紧补上";
+                            p.serverKey = "...";
+                            p.reasonCode = CS.ReasonCode.success;
+                            p.timeDiff = 123;
+                            p.serverVersion = 1;
+                            p.hasServerVersion = true;
+                            // TODO  :  webhook
+                            // call back build connect
+                            promise.complete(p);
+                        }).onComplete(res->{
+                            //connect success
+                            if(res.result() != null) {
+                                s.write(((ConnectPacket)res.result()).encode());
+                                return;
+                            }
+                            // connect fail
+                            s.end();
+                        });
+                    // other packet
+                    } else {
 
                 }
-            });
-        };
-    }
-
+                });
+            };
+        }
     public static void main(String[] args) {
         Vertx vertx1 = Vertx.vertx();
         NetServer netServer = vertx1.createNetServer();
         YutakNetBuilder yutakNetBuilder = new YutakNetBuilder();
         // lambda 执行时,不会创建多此 handler
-        netServer.connectHandler(yutakNetBuilder.netHandler());
+//        netServer.connectHandler(yutakNetBuilder.netHandler());
+        netServer.connectHandler(yutakNetBuilder.demoHandler());
+        netServer.exceptionHandler(t->{
+            System.out.println("error:["+t.getCause()+"]");
+        });
         netServer.listen(9001)
                 .onComplete(t->{
                    if(t.failed()) {
@@ -195,12 +203,27 @@ public class YutakNetBuilder {
                 c.token = "segvefewfw";
                 c.deviceFlag = 1;
                 c.clientKey = "cefcefwefAWEF";
+                c.frameType = CS.FrameType.CONNECT;
                 Buffer f = c.encode();
                 socket.write(f);
-                socket.end();
+//                socket.end();
                 return;
             });
         },1,1, TimeUnit.SECONDS);
 
+    }
+    public  Handler<NetSocket> demoHandler() {
+        return s -> {
+            System.out.println(s);
+            s.handler(b->{
+                System.out.println(b);
+                Vertx vertx1 = Vertx.vertx();
+                vertx1.executeBlocking(p->{
+                    p.complete(new ConnectPacket());
+                }).onComplete(t->{
+                    System.out.println(t.result());
+                });
+            });
+        };
     }
 }
