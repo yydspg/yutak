@@ -28,6 +28,7 @@ public class YutakNetServer {
     }
     private YutakNetServer() {
         status = new Status();
+        status.inboundMessages = new AtomicLong(0);
         connectManager = new ConnectManager();
         IPBlockList = new ConcurrentHashMap<>();
         startTime = LocalDateTime.now();
@@ -40,8 +41,6 @@ public class YutakNetServer {
     public static class Status {
         public AtomicLong inboundMessages;
         public AtomicLong outboundMessages;
-        public AtomicLong receivedBytes;
-        public AtomicLong sendBytes;
         public AtomicLong slowClients;
     }
 
