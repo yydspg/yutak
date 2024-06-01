@@ -20,6 +20,7 @@ public class Options {
     public ConversationConfig conversationConfig;
     public ExternalConfig externalConfig;
     public ManagerCount managerCount;
+    public boolean channelInfoOn;
     public Duration maxIdle = Duration.ofDays(1);
     public Options() {
 

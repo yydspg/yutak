@@ -20,8 +20,8 @@ import java.util.concurrent.locks.ReentrantLock;
 public class ConnectManager {
 
     private ReentrantLock lock = new ReentrantLock();
-    public  ConcurrentHashMap<String, List<Long>> users;
-    public ConcurrentHashMap<Long,Conn> connects;
+    private final ConcurrentHashMap<String, List<Long>> users;
+    private final ConcurrentHashMap<Long,Conn> connects;
 
     public ConnectManager() {
         this.users = new ConcurrentHashMap<>();
@@ -63,7 +63,7 @@ public class ConnectManager {
     }
     public Conn getConnectWithDeviceID(String uid, String deviceID) {
         List<Long> ids = users.get(uid);
-        for (Long id : ids) {
+        for (long id : ids) {
             Conn conn = connects.get(id);
             if (conn.deviceID.equals(deviceID)) {
                 return conn;
@@ -74,7 +74,7 @@ public class ConnectManager {
     public List<Conn> getConnectWithDeviceFlag(String uid,byte deviceFlag) {
         List<Long> ids = users.get(uid);
         List<Conn> conns = new ArrayList<>();
-        for (Long id : ids) {
+        for (long id : ids) {
             Conn conn = connects.get(id);
             if (conn.deviceFlag == deviceFlag) {conns.add(conn);}
         }
@@ -83,7 +83,7 @@ public class ConnectManager {
     public int getConnectNumWithDeviceFlag(String uid,String deviceFlag) {
         List<Long> ids = users.get(uid);
         int res = 0;
-        for (Long id : ids) {
+        for (long id : ids) {
             Conn conn = connects.get(id);
             if (conn.deviceID.equals(deviceFlag)) {
                 res += 1;

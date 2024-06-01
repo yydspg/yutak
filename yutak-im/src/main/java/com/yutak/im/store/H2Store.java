@@ -2,6 +2,7 @@ package com.yutak.im.store;
 
 import com.yutak.im.domain.Conversation;
 import com.yutak.im.domain.Message;
+import com.yutak.im.domain.PersonChannel;
 import com.yutak.im.domain.Stream;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
@@ -18,7 +19,8 @@ public class H2Store implements Store {
     public HikariDataSource hikariDataSource;
     public Logger log;
     private List<String> sql;
-    public H2Store() {
+    private static final H2Store h2Store = new H2Store();
+    private  H2Store() {
         HikariConfig c = new HikariConfig();
         c.setDriverClassName("org.h2.Driver");
         c.setMaximumPoolSize(20);
@@ -51,8 +53,14 @@ public class H2Store implements Store {
         sql.add("select ip from ip_block");
         // 9
         sql.add("delete from ip_block where ip = ?");
+        // 10
+        sql.add("insert into data_channel (channel_id) values (?)");
+        // 11
+        sql.add("insert into person_channel (channel_id,subscriber,ban) values (?,?,?)");
+        //12
+        sql.add("select channel_id,subscriber,ban from person_channel where channel_id = ?");
     }
-
+    public static H2Store get() {return h2Store;}
     @SneakyThrows
     public PreparedStatement get(String sql) {
         return hikariDataSource.getConnection().prepareStatement(sql);
@@ -63,7 +71,6 @@ public class H2Store implements Store {
         h2Store.updateUserToken("123","frhjgf0",(byte) 0,(byte)4);
         System.out.println(h2Store.getUserDeviceLevel("123", (byte) 0));
         System.out.println(h2Store.existChannel("123",(byte) 0));
-        System.out.println(h2Store.getChannel("123",(byte) 0));
         ChannelInfo c = new ChannelInfo();
         c.channelId = "1234";
         c.channelType =(byte) 0;
@@ -135,7 +142,7 @@ public class H2Store implements Store {
 
     @SneakyThrows
     @Override
-    public ChannelInfo getChannel(String channelID, byte channelType) {
+    public ChannelInfo getCommonChannel(String channelID, byte channelType) {
         PreparedStatement p = get(sql.get(4));
         p.setString(1,channelID+channelType);
         ResultSet set = p.executeQuery();
@@ -149,6 +156,30 @@ public class H2Store implements Store {
         set.close();
         p.close();
         return c;
+    }
+
+    @SneakyThrows
+    @Override
+    public PersonChannel getPersonChannel(String channelID) {
+        PreparedStatement p = get(sql.get(12));
+        p.setString(1,channelID);
+        ResultSet set = p.executeQuery();
+        set.next();
+        PersonChannel c = new PersonChannel();
+        c.id = set.getString(1);
+//        c.subscriber = set.getString(2);
+        c.ban = set.getBoolean(3);
+        return c;
+    }
+
+    @SneakyThrows
+    @Override
+    public void setPersonChannel(PersonChannel personChannel) {
+        PreparedStatement p = get(sql.get(11));
+        p.setString(1,personChannel.id);
+//        p.setString(2,personChannel.subscriber);
+        p.setBoolean(3,personChannel.ban);
+        p.execute();
     }
 
     @SneakyThrows
@@ -173,6 +204,14 @@ public class H2Store implements Store {
             p.execute();
             p.close();
         }
+    }
+
+    @SneakyThrows
+    @Override
+    public void addDataChannel(String channelID, byte channelType) {
+        PreparedStatement p = get(sql.get(10));
+        p.setString(1,channelID+"-"+channelType);
+        p.execute();
     }
 
     @SneakyThrows

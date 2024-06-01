@@ -2,6 +2,7 @@ package com.yutak.im.store;
 
 import com.yutak.im.domain.Conversation;
 import com.yutak.im.domain.Message;
+import com.yutak.im.domain.PersonChannel;
 import com.yutak.im.domain.Stream;
 
 import java.util.List;
@@ -15,8 +16,11 @@ public interface Store {
     void updateUserToken(String uid,String token,byte deviceFlag,byte deviceLevel);
     void updateMessageOfUserCursorNeed(String uid,int messageSeq);
     // channel
-    ChannelInfo getChannel(String channelID,byte channelType);
+    ChannelInfo getCommonChannel(String channelID,byte channelType);
+    PersonChannel getPersonChannel(String channelID);
+    void setPersonChannel(PersonChannel personChannel);
     void addOrUpdateChannel(ChannelInfo channelInfo);
+    void addDataChannel(String channelID,byte channelType);
     boolean existChannel(String channelID,byte channelType);
     void addSubscribers(String channelID, byte channelType, List<String> subscribers);
     void removeSubscribers(String channelID, byte channelType, List<String> subscribers);

@@ -1,15 +1,18 @@
 package com.yutak.im.handler;
 
+import com.yutak.im.core.ChannelManager;
 import com.yutak.im.core.ConnectManager;
 import com.yutak.im.core.Options;
 import com.yutak.im.core.YutakNetServer;
 import com.yutak.im.domain.Conn;
 import com.yutak.im.kit.BufferKit;
 import com.yutak.im.kit.SecurityKit;
+import com.yutak.im.kit.SocketKit;
 import com.yutak.im.proto.*;
 import com.yutak.im.store.Store;
 import com.yutak.vertx.kit.StringKit;
 import io.vertx.core.Handler;
+import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.net.NetSocket;
@@ -21,6 +24,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 public class PacketProcessor {
     private ConnectManager connectManager;
+    private ChannelManager channelManager;
     private Options options;
     private Store store;
     private final Logger log;
@@ -33,6 +37,7 @@ public class PacketProcessor {
         yutakNetServer = YutakNetServer.get();
         log = LoggerFactory.getLogger(this.getClass());
         connectManager = new ConnectManager();
+        channelManager = new ChannelManager();
     }
 
     private final static PacketProcessor instance = new PacketProcessor();
@@ -41,17 +46,11 @@ public class PacketProcessor {
         return instance;
     }
 
-    public Handler<Buffer> statistics() {
+    public Handler<Buffer> pipe(NetSocket s) {
         return b -> {
-            byte fixHeader = b.getByte(0);
-            if((fixHeader & 0xf0) != CS.FrameType.PING) {
-                yutakNetServer.status.inboundMessages.getAndIncrement();
-            }
-        };
-    }
+            // 1. statistics layer
+            get().statistics().handle(b);
 
-    public Handler<Buffer> packet(NetSocket s) {
-        return b -> {
             log.info("packet send");
             // decode layer
             Packet packet = BufferKit.decodePacket(b);
@@ -64,8 +63,49 @@ public class PacketProcessor {
             if (packet.frameType == CS.FrameType.CONNECT) {
                 // connect status build
                 final ConnectPacket connectPacket = (ConnectPacket) packet;
-                // auth blocking execute !!!
-                vertx.executeBlocking(promise -> {
+                // build connect
+                vertx.executeBlocking(get().connect(s,connectPacket)).onComplete(res -> {
+                    //connect success
+                    if (res.succeeded() && res.result() != null) {
+                        s.write((res.result()).encode());
+                        return;
+                    }
+                    // connect fail
+                    log.error(res.cause().getMessage());
+                    //  end tcp connect
+                    s.end();
+                });
+                // other packet
+            } else {
+                // check connect status
+                Conn connect = connectManager.getConnect(SocketKit.ipToLong(s.remoteAddress().host()));
+
+                if(connect == null) {
+                    log.error("please connect first");
+                    s.end();
+                }
+
+//                switch(packet.frameType) {
+//                    case CS.FrameType.PING -> pingProcess(packet,s);
+//                    case CS.FrameType.RECVACK -> recvAckProcess(packet,s);
+//                    case CS.FrameType.SUB -> subProcess(packet,s);
+//                    case CS.FrameType.SEND -> sendProcess(packet,s);
+//                }
+            }
+        };
+    }
+
+    private Handler<Buffer> statistics() {
+        return b -> {
+            byte fixHeader = b.getByte(0);
+            if((fixHeader & 0xf0) != CS.FrameType.PING) {
+                yutakNetServer.status.inboundMessages.getAndIncrement();
+            }
+        };
+    }
+    private Handler<Promise<ConnAckPacket>> connect(NetSocket s,ConnectPacket connectPacket) {
+        return promise -> {
+            // auth blocking execute !!!
                     // verify client key
                     if (StringKit.same(connectPacket.clientKey, "")) {
                         promise.fail("client key is empty");
@@ -99,7 +139,7 @@ public class PacketProcessor {
                         deviceLevel = CS.Device.Level.slave;
                     }
                     // check user status
-                    Store.ChannelInfo channel = store.getChannel(connectPacket.UID, CS.ChannelType.Person);
+                    Store.ChannelInfo channel = store.getCommonChannel(connectPacket.UID, CS.ChannelType.Person);
 
                     if (channel == null) {
                         return;
@@ -142,7 +182,7 @@ public class PacketProcessor {
                         }
                     }
                     // build Conn
-                    Conn conn = new Conn(idGenerator.get(), s.remoteAddress().host(), s);
+                    Conn conn = new Conn(SocketKit.ipToLong(s.remoteAddress().host()), s.remoteAddress().host(), s);
                     conn.auth = true;
                     conn.deviceFlag = connectPacket.deviceFlag;
                     conn.deviceID = connectPacket.deviceID;
@@ -163,28 +203,17 @@ public class PacketProcessor {
                     // TODO  :  webhook
                     // call back build connect
                     promise.complete(p);
-                }).onComplete(res -> {
-                    //connect success
-                    if (res.succeeded() && res.result() != null) {
-                        s.write(((ConnectPacket) res.result()).encode());
-                        return;
-                    }
-                    // connect fail
-                    log.error(res.cause().getMessage());
-                    s.end();
-                });
-            // other packet
-            } else {
-                switch(packet.frameType) {
-                    case CS.FrameType.PING -> pingProcess(packet,s);
-                    case CS.FrameType.RECVACK -> recvAckProcess(packet,s);
-                    case CS.FrameType.SUB -> subProcess(packet,s);
-                    case CS.FrameType.SEND -> sendProcess(packet,s);
-                }
-            }
-        };
+                };
     }
-    private void sendProcess(Packet packet,NetSocket s) {}
+    private void sendProcess(Packet packet,NetSocket s) {
+        SendPacket sendPacket = (SendPacket) packet;
+        // check channel
+        if (sendPacket.channelType == CS.ChannelType.Person) {
+            // delivery message Manager
+
+        }
+
+    }
     private void subProcess(Packet packet,NetSocket s) {}
     private void recvAckProcess(Packet packet,NetSocket s) {
 

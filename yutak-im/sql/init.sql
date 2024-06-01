@@ -8,7 +8,7 @@ CREATE TABLE user_token (
 
 CREATE UNIQUE INDEX user_uid ON user_token (uid);
 
-// channel info
+// commonChannel info
 
 CREATE TABLE channel_info
 (
