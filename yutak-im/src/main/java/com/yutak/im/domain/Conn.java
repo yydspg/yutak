@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.locks.ReentrantLock;
 
 public class Conn {
     public String uid;
@@ -26,6 +27,7 @@ public class Conn {
     public boolean auth;
     public NetSocket netSocket;
     public List<Packet> packets;
+    private final ReentrantLock lock;
     public Conn(long id,String remoteAddr,NetSocket netSocket) {
         uid = "";
         this.id = id;
@@ -38,10 +40,20 @@ public class Conn {
         close = new AtomicBoolean(false);
         this.netSocket = netSocket;
         packets = new ArrayList<>();
+        lock = new ReentrantLock();
+    }
+    public void add(Packet packet) {
+        packets.add(packet);
     }
     public void close() {
         close.set(true);
         netSocket.close();
         packets.clear();
     }
+    public void addPacket(Packet packet) {
+        lock.lock();
+        packets.add(packet);
+        lock.unlock();
+    }
+
 }

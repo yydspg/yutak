@@ -19,22 +19,27 @@ import java.util.concurrent.locks.ReentrantLock;
 // 业务连接管理
 public class ConnectManager {
 
-    private ReentrantLock lock = new ReentrantLock();
+    private final ReentrantLock lock = new ReentrantLock();
     private final ConcurrentHashMap<String, List<Long>> users;
     private final ConcurrentHashMap<Long,Conn> connects;
 
-    public ConnectManager() {
+    private final static ConnectManager connectManager ;
+    static {
+        connectManager = new ConnectManager();
+    }
+    private ConnectManager() {
         this.users = new ConcurrentHashMap<>();
         this.connects = new ConcurrentHashMap<>();
+    }
+    public static ConnectManager get() {
+        return connectManager;
     }
     public void addConnect(Conn conn) {
         List<Long> uids = users.get(conn.uid);
         if (uids == null) uids = new ArrayList<>(2);
-        lock.lock();
         uids.add(conn.id);
         users.put(conn.uid, uids);
         connects.put(conn.id,conn);
-        lock.unlock();
     }
     public Conn getConnect(long id) {
         return connects.get(id);
@@ -42,7 +47,6 @@ public class ConnectManager {
     public void removeConnect(long id) {
         Conn conn = connects.get(id);
         List<Long> ids = users.get(conn.uid);
-        lock.lock();
         connects.remove(id);
         for (int i = 0; i < ids.size(); i++) {
             if (ids.get(i) == id) {
@@ -50,7 +54,6 @@ public class ConnectManager {
                 break;
             }
         }
-        lock.unlock();
     }
     public List<Conn> getConnect(String uid) {
         List<Long> ids = users.get(uid);

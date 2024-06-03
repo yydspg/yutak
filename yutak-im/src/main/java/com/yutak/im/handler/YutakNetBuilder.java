@@ -30,14 +30,12 @@ import java.util.concurrent.atomic.AtomicLong;
 public class YutakNetBuilder {
     private ConnectManager connectManager ;
     private PacketProcessor processor;
-    private Vertx vertx;
     private Options options;
     private Store store;
     private final Logger log ;
     private final AtomicLong idGenerator = new AtomicLong(0);
     public YutakNetBuilder() {
         log = LoggerFactory.getLogger(YutakNetBuilder.class);
-        vertx = Vertx.vertx();
         processor = PacketProcessor.get();
     }
 
@@ -64,10 +62,10 @@ public class YutakNetBuilder {
 
 //        netServer.connectHandler(yutakNetBuilder.demoHandler());
         netServer.connectHandler(yutakNetBuilder.netHandler());
-        netServer.connectHandler((socket)->{
-            System.out.println("11");
-            System.out.println(s.status.inboundMessages.getAndIncrement());
-        });
+//        netServer.connectHandler((socket)->{
+//            System.out.println("11");
+//            System.out.println(s.status.inboundMessages.getAndIncrement());
+//        });
         netServer.exceptionHandler(t->{
             System.out.println("error:["+t.getCause()+"]");
         });
@@ -93,9 +91,13 @@ public class YutakNetBuilder {
                 c.deviceFlag = 1;
                 c.clientKey = "cefcefwefAWEF";
                 c.frameType = CS.FrameType.CONNECT;
+                PingPacket p = new PingPacket();
+                p.frameType = CS.FrameType.PING;
+                Buffer e = p.encode();
                 Buffer f = c.encode();
                 socket.write(f);
-//                socket.end();
+                socket.write(e);
+                socket.end();
                 return;
             });
         },1,1, TimeUnit.SECONDS);

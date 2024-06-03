@@ -22,9 +22,11 @@ public class Options {
     public ManagerCount managerCount;
     public boolean channelInfoOn;
     public Duration maxIdle = Duration.ofDays(1);
-    public Options() {
-
+    private final static Options options = new Options();
+    private  Options() {
+        managerCount = new ManagerCount();
     }
+    public static Options get() {return options;}
     public static class WSSConfig {
         public String certFile;
         public String keyFile;

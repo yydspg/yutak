@@ -18,6 +18,9 @@ public class SocketKit {
         }
         return result;
     }
+    public static String buildK(String id,byte type) {
+        return id + "-" + type;
+    }
     public static void stop(NetSocket s,String msg) {
         Buffer buffer = Buffer.buffer();
         buffer.setString(0, msg);

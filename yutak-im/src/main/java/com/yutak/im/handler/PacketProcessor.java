@@ -1,24 +1,29 @@
 package com.yutak.im.handler;
 
-import com.yutak.im.core.ChannelManager;
-import com.yutak.im.core.ConnectManager;
-import com.yutak.im.core.Options;
-import com.yutak.im.core.YutakNetServer;
+import com.yutak.im.core.*;
+import com.yutak.im.domain.Channel;
 import com.yutak.im.domain.Conn;
+import com.yutak.im.domain.Message;
+import com.yutak.im.domain.PersonChannel;
 import com.yutak.im.kit.BufferKit;
 import com.yutak.im.kit.SecurityKit;
 import com.yutak.im.kit.SocketKit;
 import com.yutak.im.proto.*;
+import com.yutak.im.store.H2Store;
 import com.yutak.im.store.Store;
 import com.yutak.vertx.kit.StringKit;
+import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.net.NetSocket;
+import io.vertx.ext.auth.PRNG;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -29,19 +34,27 @@ public class PacketProcessor {
     private Store store;
     private final Logger log;
     private final YutakNetServer yutakNetServer;
+    private final DeliveryManager deliveryManager;
     // id 生成器
     private final AtomicLong idGenerator = new AtomicLong(0);
     private Vertx vertx;
-
+    byte[] types = {CS.FrameType.PING,CS.FrameType.SEND,CS.FrameType.RECVACK, (byte) CS.FrameType.SUB};
     private PacketProcessor() {
         yutakNetServer = YutakNetServer.get();
         log = LoggerFactory.getLogger(this.getClass());
-        connectManager = new ConnectManager();
-        channelManager = new ChannelManager();
+        connectManager = ConnectManager.get();
+        channelManager = ChannelManager.get();
+        vertx = YutakNetServer.get().vertx;
+        options = Options.get();
+        store = H2Store.get();
+        deliveryManager = DeliveryManager.get();
     }
 
-    private final static PacketProcessor instance = new PacketProcessor();
+    private final static PacketProcessor instance ;
 
+    static {
+        instance = new PacketProcessor();
+    }
     public static PacketProcessor get() {
         return instance;
     }
@@ -50,7 +63,6 @@ public class PacketProcessor {
         return b -> {
             // 1. statistics layer
             get().statistics().handle(b);
-
             log.info("packet send");
             // decode layer
             Packet packet = BufferKit.decodePacket(b);
@@ -59,6 +71,7 @@ public class PacketProcessor {
                 s.end();
                 return;
             }
+            //search for conn
             // process packet
             if (packet.frameType == CS.FrameType.CONNECT) {
                 // connect status build
@@ -77,20 +90,20 @@ public class PacketProcessor {
                 });
                 // other packet
             } else {
-                // check connect status
-                Conn connect = connectManager.getConnect(SocketKit.ipToLong(s.remoteAddress().host()));
+                // check connect status,build connect id by socketKit
+                Conn conn = connectManager.getConnect(SocketKit.ipToLong(s.remoteAddress().host()));
 
-                if(connect == null) {
+                if(conn == null) {
                     log.error("please connect first");
                     s.end();
+                    return;
                 }
+                conn.inMsgs.getAndIncrement();
+                conn.packets.add(packet);
+                //  process msg
+                // TODO  :  这里存在问题啊，packets这样的话就是同步处理每一条
+               process(conn);
 
-//                switch(packet.frameType) {
-//                    case CS.FrameType.PING -> pingProcess(packet,s);
-//                    case CS.FrameType.RECVACK -> recvAckProcess(packet,s);
-//                    case CS.FrameType.SUB -> subProcess(packet,s);
-//                    case CS.FrameType.SEND -> sendProcess(packet,s);
-//                }
             }
         };
     }
@@ -98,7 +111,8 @@ public class PacketProcessor {
     private Handler<Buffer> statistics() {
         return b -> {
             byte fixHeader = b.getByte(0);
-            if((fixHeader & 0xf0) != CS.FrameType.PING) {
+            if((fixHeader & 0xf0) != CS.FrameType.PING
+                && (fixHeader & 0x60) != CS.FrameType.RECVACK) {
                 yutakNetServer.status.inboundMessages.getAndIncrement();
             }
         };
@@ -142,6 +156,7 @@ public class PacketProcessor {
                     Store.ChannelInfo channel = store.getCommonChannel(connectPacket.UID, CS.ChannelType.Person);
 
                     if (channel == null) {
+                        promise.fail("client channel is empty");
                         return;
                     }
                     if (channel.ban) {
@@ -189,7 +204,7 @@ public class PacketProcessor {
                     conn.uid = connectPacket.UID;
                     conn.deviceLevel = deviceLevel;
                     conn.maxIdle = options.maxIdle;
-                    // add conn
+                    // add conn in memory
                     connectManager.addConnect(conn);
 
                     ConnAckPacket p = new ConnAckPacket();
@@ -205,24 +220,106 @@ public class PacketProcessor {
                     promise.complete(p);
                 };
     }
-    private void sendProcess(Packet packet,NetSocket s) {
-        SendPacket sendPacket = (SendPacket) packet;
-        // check channel
-        if (sendPacket.channelType == CS.ChannelType.Person) {
-            // delivery message Manager
+    private void process(Conn conn) {
+        List<Packet> packets = conn.packets;
 
+        List<Packet> tmpPackets = new ArrayList<>();
+        // according type to group packets
+        for (int i = 0; i < types.length; i++) {
+            tmpPackets.clear();
+            for (int j = 0; j < packets.size(); j++) {
+                if (packets.get(j).frameType == types[i]) {
+                    tmpPackets.add(packets.get(j));
+                }
+            }
+            switch(i) {
+                // core process layer
+                case 1: processMsgs(conn,tmpPackets.stream().map(t->(SendPacket)t).toList());
+                case 0: pingProcess(conn);
+                case 2: recvAckProcess(conn,tmpPackets.stream().map(t->(RecvPacket)t).toList());
+                case 3: subProcess(conn,tmpPackets.stream().map(t->(SubPacket)t).toList());
+            }
         }
+    }
+    private void processMsgs(Conn conn,List<SendPacket> packets) {
+//        ArrayList<SendPacket> tmpPackets = new ArrayList<>();
+//        for (SendPacket p : packets) {
+//            tmpPackets.add(p);
+//        }
+        HashMap<String, List<SendPacket>> channelSendPacketMap = new HashMap<>();
+        // split sendPacket by channel
+        for (SendPacket p : packets) {
+            String channelKey = SocketKit.buildK(p.channelID,p.channelType);
+            List<SendPacket> channelSendPackets = channelSendPacketMap.get(channelKey);
+            if (channelSendPackets == null) {channelSendPackets = new ArrayList<>();}
+            channelSendPackets.add(p);
+            channelSendPacketMap.put(channelKey, channelSendPackets);
+        }
+        // process ack packet
+
+//            List<SendAckPacket> ackPackets = processChannelPacket(conn, v.get(0).channelID, v.get(0).channelType, v);
+//            sendAckPackets.addAll(ackPackets);
+//            Future.future(this.processChannel(conn,v.get(0).channelID,v.get(0).channelType,v))
+//                    .onComplete(r->{
+//                        deliveryManager.dataOut(conn,r.result());
+//                    });
+            channelSendPacketMap.forEach((k, v) -> {
+                vertx.executeBlocking(p->{
+                            p.complete(channelManager.getChannel(v.get(0).channelID,v.get(1).channelType));
+                        })
+                        .onSuccess(r -> {
+                            processChannel(conn,(Channel) r).handle(v);
+                        });
+            });
+    }
+
+        // process delivery packet,message
+
+        // response sendAck Packet
+//        deliveryManager.dataOut(conn,sendAckPackets);
+    private void subProcess(Conn conn,List<SubPacket> packets) {}
+    private void recvAckProcess(Conn conn,List<RecvPacket> recvPackets) {
 
     }
-    private void subProcess(Packet packet,NetSocket s) {}
-    private void recvAckProcess(Packet packet,NetSocket s) {
-
+    // process same type packets
+    private Handler<List<SendPacket>> processChannel(Conn conn,Channel channel) {
+        return packets-> {
+            if (channel == null) {
+                deliveryManager.dataOut(conn,buildAck(CS.ReasonCode.ChannelNotExist, packets));
+                return;
+            }
+            if(channel.baned()) {
+                deliveryManager.dataOut(conn,buildAck(CS.ReasonCode.Ban, packets));
+            } else {
+                deliveryManager.dataOut(conn,buildAck(CS.ReasonCode.success, packets));
+            }
+            //
+            deliveryManager.delivery(conn,packets).handle(channel);
+        };
     }
-    private void pingProcess(Packet packet,NetSocket s) {
+
+    private List<SendAckPacket> buildAck(byte code,List<SendPacket> ss) {
+        ArrayList<SendAckPacket> packets = new ArrayList<>();
+        for (SendPacket se : ss) {
+            SendAckPacket p = new SendAckPacket();
+            p.dup = se.dup;
+            p.frameType = CS.FrameType.SENDACK;
+            p.noPersist = se.noPersist;
+            p.redDot = se.redDot;
+            p.syncOnce = se.syncOnce;
+            p.hasServerVersion = se.hasServerVersion;
+            p.reasonCode = code;
+            p.clientSeq = se.clientSeq;
+            p.clientMsgNo = se.clientMsgNo;
+            packets.add(p);
+        }
+        return packets;
+    }
+    private void pingProcess(Conn conn) {
         // Ping packet 池化技术！
         PongPacket p = new PongPacket();
         p.frameType = CS.FrameType.PONG;
         Buffer b = p.encode();
-        s.write(b);
+        conn.netSocket.write(b);
     }
 }

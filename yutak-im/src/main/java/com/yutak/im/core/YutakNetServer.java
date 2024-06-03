@@ -2,6 +2,7 @@ package com.yutak.im.core;
 
 
 import com.yutak.im.store.Store;
+import io.vertx.core.Vertx;
 import io.vertx.core.net.NetServer;
 
 import java.time.LocalDateTime;
@@ -22,6 +23,7 @@ public class YutakNetServer {
     public Map<String,Boolean> IPBlockList ;
     private Store store;
     private NetServer netServer;
+    public Vertx vertx;
     private final static YutakNetServer yutakNetServer;
     static {
         yutakNetServer = new YutakNetServer();
@@ -29,9 +31,10 @@ public class YutakNetServer {
     private YutakNetServer() {
         status = new Status();
         status.inboundMessages = new AtomicLong(0);
-        connectManager = new ConnectManager();
+        connectManager = ConnectManager.get();
         IPBlockList = new ConcurrentHashMap<>();
         startTime = LocalDateTime.now();
+        vertx = Vertx.vertx();
     }
 
     public static YutakNetServer get() {

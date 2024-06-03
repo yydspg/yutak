@@ -6,6 +6,7 @@ import com.yutak.im.domain.PersonChannel;
 import com.yutak.im.proto.CS;
 import com.yutak.im.store.H2Store;
 import com.yutak.im.store.Store;
+import io.vertx.core.Vertx;
 
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
@@ -19,12 +20,23 @@ public class ChannelManager {
     private final ConcurrentHashMap<String, CommonChannel> dataChannels;
     private final ConcurrentHashMap<String, PersonChannel> personChannels;
     private Options options;
-    public ChannelManager() {
+    public final Vertx vertx;
+    private static ChannelManager instance;
+    static {
+        instance = new ChannelManager();
+    }
+    private ChannelManager() {
         this.channels = new ConcurrentHashMap<>();
         this.tmpChannels = new ConcurrentHashMap<>();
         this.dataChannels = new ConcurrentHashMap<>();
         this.personChannels = new ConcurrentHashMap<>();
         store = H2Store.get();
+        options = Options.get();
+        vertx = YutakNetServer.get().vertx;
+    }
+
+    public static ChannelManager get() {
+        return instance;
     }
     public Channel getChannel(String id, byte type) {
         if(id.contains(tmpChannelPrefix)) {
@@ -44,12 +56,19 @@ public class ChannelManager {
         PersonChannel channel = personChannels.get(id);
         if(channel != null) return channel;
         // need to load from store
+//        vertx.executeBlocking(promise->{
+//            promise.complete(store.getPersonChannel(id));
+//        }).onComplete(t->{
+//            return t;
+//        });
         channel = store.getPersonChannel(id);
+        if(channel == null) return null;
         // TODO  :  monitor layer
         // add in memory
         personChannels.put(id,channel);
         return channel;
     }
+
     // TODO  :  这里也是需要改的，不然dataChannel的意义呢？
     public CommonChannel getOrCreateDataChannel(String id, byte type) {
         String k = id+"-"+type;
@@ -58,7 +77,6 @@ public class ChannelManager {
         if(commonChannel != null) return commonChannel;
         // persitence store
         commonChannel = new CommonChannel();
-
         store.addDataChannel(id,type);
         // TODO  :  monitor layer
         // add in memory
@@ -70,7 +88,11 @@ public class ChannelManager {
         CommonChannel commonChannel = channels.get(k);
         if(commonChannel != null) return commonChannel;
         Store.ChannelInfo info = store.getCommonChannel(id, type);
+        if (info == null) return null;
         commonChannel = new CommonChannel();
+        commonChannel.ban = info.ban;
+        commonChannel.large = info.large;
+        commonChannel.disband = info.disband;
         commonChannel.id = id;
         commonChannel.type = type;
         loadChannelData(commonChannel);

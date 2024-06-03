@@ -1,6 +1,7 @@
 package com.yutak.im.test;
 
 import com.zaxxer.hikari.HikariConfig;
+import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.net.NetClient;
@@ -44,12 +45,11 @@ public  class Test implements Handler<NetSocket> {
                 Demo demo = new Demo();
                 demo.d1("hello",vertx).handle("world");
                 demo.d2("hello1").handle("world1");
-                vertx.executeBlocking(p->{
-                    try {
-                        TimeUnit.SECONDS.sleep(1);
-                    } catch (InterruptedException e) {
-                        throw new RuntimeException(e);
-                    }
+                Future.future(promise->{
+                        promise.complete();
+                        return;
+                }).onComplete(res->{
+                    System.out.println("sync ops");
                 });
                 demo.d3("hello2").handle("world2");
             });
@@ -63,7 +63,8 @@ public  class Test implements Handler<NetSocket> {
                 res.result().write("hello");
                 res.result().end();
             });
-        },1,1, TimeUnit.SECONDS);
+        },1,1, TimeUnit.MILLISECONDS);
 
     }
+
 }

@@ -41,7 +41,7 @@ public class SubAckPacket extends Packet{
         i = t;
         channelType = b.getByte(i++);
         action = b.getByte(i++);
-        reasonCode = b.getByte(i++);
+        reasonCode = b.getByte(i);
         return this;
     }
 

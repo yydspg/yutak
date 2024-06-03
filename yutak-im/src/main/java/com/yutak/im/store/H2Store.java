@@ -23,8 +23,8 @@ public class H2Store implements Store {
     private  H2Store() {
         HikariConfig c = new HikariConfig();
         c.setDriverClassName("org.h2.Driver");
-        c.setMaximumPoolSize(20);
-        c.setMinimumIdle(2);
+        c.setMaximumPoolSize(200);
+        c.setMinimumIdle(30);
         c.setAutoCommit(true);
         c.setPoolName("h2");
         c.setJdbcUrl("jdbc:h2:/home/paul/data/yutak");
@@ -107,7 +107,10 @@ public class H2Store implements Store {
         ResultSet set = p.executeQuery();
 //        System.out.println("SELECT TOKEN FROM USER_TOKEN WHERE UID = '" + uid+deviceFlag + "'");
 //        ResultSet set = query("SELECT * FROM USER_TOKEN");
-        set.next();
+        if (!set.next()) {
+            //no data exists
+            return null;
+        }
         return set.getString(1);
     }
 
@@ -117,7 +120,10 @@ public class H2Store implements Store {
         PreparedStatement p = get(sql.get(2));
         p.setString(1,uid+deviceFlag);
         ResultSet set = p.executeQuery();
-        set.next();
+        if (!set.next()) {
+            //no data exists
+            return (byte)0;
+        }
         byte b = set.getByte(1);
         set.close();
         p.close();
@@ -146,7 +152,10 @@ public class H2Store implements Store {
         PreparedStatement p = get(sql.get(4));
         p.setString(1,channelID+channelType);
         ResultSet set = p.executeQuery();
-        set.next();
+        if (!set.next()) {
+            // not data exists
+            return null;
+        }
         ChannelInfo c = new ChannelInfo();
         c.channelId = channelID;
         c.channelType  = channelType;
@@ -164,11 +173,16 @@ public class H2Store implements Store {
         PreparedStatement p = get(sql.get(12));
         p.setString(1,channelID);
         ResultSet set = p.executeQuery();
-        set.next();
+        if (!set.next()) {
+            //no data exists
+            return null;
+        }
         PersonChannel c = new PersonChannel();
         c.id = set.getString(1);
 //        c.subscriber = set.getString(2);
         c.ban = set.getBoolean(3);
+        p.close();
+        set.close();
         return c;
     }
 
@@ -220,18 +234,17 @@ public class H2Store implements Store {
         PreparedStatement p = get(sql.get(3));
         p.setString(1,channelID+channelType);
         ResultSet set = p.executeQuery();
-        set.next();
-        try {
-            if (set.getInt(1) == 1) {
-                set.close();
-                p.close();
-                return true;
-            }
-        }catch (Exception e) {
-            set.close();
-            p.close();
+        if (!set.next()) {
+            //no data exists
             return false;
         }
+        if (set.getInt(1) == 1) {
+           set.close();
+           p.close();
+           return true;
+        }
+        set.close();
+        p.close();
         return false;
     }
 
