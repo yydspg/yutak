@@ -4,13 +4,10 @@ import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
 import lombok.SneakyThrows;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Field;
 
 public class ReqKit {
-    private static final Logger log = LoggerFactory.getLogger(ReqKit.class);
 
     public static String getStrInPath(HttpServerRequest r,String k) {
        return r.getParam(k);
@@ -37,7 +34,6 @@ public class ReqKit {
     private static void setFieldVInForm(Field f, Object o, HttpServerRequest h) {
         f.setAccessible(true);
         Class<?> type = f.getType();
-        log.info(h.getFormAttribute(f.getName()));
         if(type == String.class) f.set(o,h.getFormAttribute(f.getName()));
         else if(type == int.class) f.set(o,Integer.parseInt(h.getFormAttribute(f.getName())));
         else if(type == boolean.class) f.set(o,Boolean.parseBoolean(h.getFormAttribute(f.getName())));

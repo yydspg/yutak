@@ -16,7 +16,7 @@ import java.util.Objects;
 import java.util.function.Consumer;
 
 public class ServerBoot {
-    private static final Logger log = LoggerFactory.getLogger(ServerBoot.class);
+
     public static void start(String basepackages, Integer httpPort, Consumer<VertxMvcRouterHandler> before, Consumer<VertxMvcRouterHandler> after) {
         VertxHttpServerConfig serverConfig = new VertxHttpServerConfig();
 

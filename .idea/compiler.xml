@@ -20,7 +20,7 @@
       <module name="codec" options="-parameters" />
       <module name="yutak-im" options="-parameters" />
       <module name="yutak-orm" options="-parameters" />
-      <module name="yutak-vertx" options="-parameters" />
+      <module name="yutak-vertx" options="" />
       <module name="yutak-web" options="-parameters" />
     </option>
   </component>
