@@ -1,6 +1,8 @@
 package com.yutak.vertx.kit;
 
 import org.reflections.Reflections;
+import org.reflections.scanners.MethodAnnotationsScanner;
+import org.reflections.scanners.Scanners;
 import org.reflections.util.ClasspathHelper;
 import org.reflections.util.ConfigurationBuilder;
 import org.reflections.util.FilterBuilder;
@@ -30,11 +32,9 @@ public class ReflectKit {
     }
     public static Reflections getReflections(String packageAddress) {
         ConfigurationBuilder configurationBuilder = new ConfigurationBuilder();
-        FilterBuilder filterBuilder = new FilterBuilder();
+        configurationBuilder.addScanners(Scanners.TypesAnnotated);
         String[] addresses = packageAddress.split(",");
         Stream.of(addresses).forEach(str -> configurationBuilder.addUrls(ClasspathHelper.forPackage(str.trim())));
-        filterBuilder.includePackage(Arrays.toString(addresses));
-        configurationBuilder.filterInputsBy(filterBuilder);
         return new Reflections(configurationBuilder);
     }
 }
