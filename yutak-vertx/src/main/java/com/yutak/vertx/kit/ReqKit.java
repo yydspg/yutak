@@ -9,8 +9,14 @@ import java.lang.reflect.Field;
 
 public class ReqKit {
 
-    public static String getStrInPath(HttpServerRequest r,String k) {
-       return r.getParam(k);
+
+    public static String getStrInPath(RoutingContext r,String k) {
+        try {
+            return r.request().getParam(k);
+        } catch (Exception e) {
+            ResKit.error(r,"parse body params error");
+        }
+        return null;
     }
     public static String getCookie(HttpServerRequest r,String k) {
         return r.getCookie(k).getValue();
@@ -18,8 +24,13 @@ public class ReqKit {
     public static JsonObject getJSON(RoutingContext r) {
         return r.body().asJsonObject();
     }
-    public static Object getObjectInBody(RoutingContext r,Class<?> c) {
-        return r.body().asPojo(c);
+    public static <T> T getObjectInBody(RoutingContext r,Class<T> c) {
+        try {
+            return r.body().asPojo(c);
+        } catch (Exception e) {
+            ResKit.error(r,"no invalid request body");
+        }
+        return null;
     }
     @SneakyThrows
     public static <T> T getObjectInForm(HttpServerRequest r, Class<T> c) {

@@ -153,7 +153,8 @@ public class PacketProcessor {
                         deviceLevel = CS.Device.Level.slave;
                     }
                     // check user status
-                    Store.ChannelInfo channel = store.getCommonChannel(connectPacket.UID, CS.ChannelType.Person);
+                    //todo
+                    Store.ChannelInfo channel = store.getChannel(connectPacket.UID, CS.ChannelType.Person);
 
                     if (channel == null) {
                         promise.fail("client channel is empty");

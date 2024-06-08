@@ -148,7 +148,7 @@ public class H2Store implements Store {
 
     @SneakyThrows
     @Override
-    public ChannelInfo getCommonChannel(String channelID, byte channelType) {
+    public ChannelInfo getChannel(String channelID, byte channelType) {
         PreparedStatement p = get(sql.get(4));
         p.setString(1,channelID+channelType);
         ResultSet set = p.executeQuery();
@@ -166,25 +166,25 @@ public class H2Store implements Store {
         p.close();
         return c;
     }
-
-    @SneakyThrows
-    @Override
-    public PersonChannel getPersonChannel(String channelID) {
-        PreparedStatement p = get(sql.get(12));
-        p.setString(1,channelID);
-        ResultSet set = p.executeQuery();
-        if (!set.next()) {
-            //no data exists
-            return null;
-        }
-        PersonChannel c = new PersonChannel();
-        c.id = set.getString(1);
-//        c.subscriber = set.getString(2);
-        c.ban = set.getBoolean(3);
-        p.close();
-        set.close();
-        return c;
-    }
+//
+//    @SneakyThrows
+//    @Override
+//    public PersonChannel getPersonChannel(String channelID) {
+//        PreparedStatement p = get(sql.get(12));
+//        p.setString(1,channelID);
+//        ResultSet set = p.executeQuery();
+//        if (!set.next()) {
+//            //no data exists
+//            return null;
+//        }
+//        PersonChannel c = new PersonChannel();
+//        c.id = set.getString(1);
+////        c.subscriber = set.getString(2);
+//        c.ban = set.getBoolean(3);
+//        p.close();
+//        set.close();
+//        return c;
+//    }
 
     @SneakyThrows
     @Override

@@ -16,9 +16,8 @@ public class ChannelManager {
     private final String tmpChannelPrefix = "tmp";
     private Store store;
     private final ConcurrentHashMap<String, CommonChannel> channels;
-    private final ConcurrentHashMap<String, CommonChannel> tmpChannels;
+    private final ConcurrentHashMap<String,CommonChannel> tmpChannels;
     private final ConcurrentHashMap<String, CommonChannel> dataChannels;
-    private final ConcurrentHashMap<String, PersonChannel> personChannels;
     private Options options;
     public final Vertx vertx;
     private static ChannelManager instance;
@@ -29,7 +28,6 @@ public class ChannelManager {
         this.channels = new ConcurrentHashMap<>();
         this.tmpChannels = new ConcurrentHashMap<>();
         this.dataChannels = new ConcurrentHashMap<>();
-        this.personChannels = new ConcurrentHashMap<>();
         store = H2Store.get();
         options = Options.get();
         vertx = YutakNetServer.get().vertx;
@@ -38,35 +36,29 @@ public class ChannelManager {
     public static ChannelManager get() {
         return instance;
     }
-    public Channel getChannel(String id, byte type) {
+    public CommonChannel getChannel(String id, byte type) {
         if(id.contains(tmpChannelPrefix)) {
             return tmpChannels.get(id+"-"+type);
         }
-        if(type == CS.ChannelType.Person) {
-            return getPersonChannel(id);
-        }
+//        if(type == CS.ChannelType.Person) {
+//            return getPersonChannel(id);
+//        }
         if(type == CS.ChannelType.Data) {
             return getOrCreateDataChannel(id,type);
         }
         return getChannelFromCacheOrStore(id,type);
     }
     //TODO 这里肯定是需要优化的，如果全部放在内存里，假设1000人，每人200个好友，就有2 0000 条数据，这是不能接受的，可以使用lRU算法优化
-    public PersonChannel getPersonChannel(String id) {
+    private PersonChannel getPersonChannel(String id) {
         // in memory
-        PersonChannel channel = personChannels.get(id);
-        if(channel != null) return channel;
         // need to load from store
 //        vertx.executeBlocking(promise->{
 //            promise.complete(store.getPersonChannel(id));
 //        }).onComplete(t->{
 //            return t;
 //        });
-        channel = store.getPersonChannel(id);
-        if(channel == null) return null;
-        // TODO  :  monitor layer
-        // add in memory
-        personChannels.put(id,channel);
-        return channel;
+//        channel = store.getPersonChannel(id);
+            return  null;
     }
 
     // TODO  :  这里也是需要改的，不然dataChannel的意义呢？
@@ -87,7 +79,7 @@ public class ChannelManager {
         String k = id+"-"+type;
         CommonChannel commonChannel = channels.get(k);
         if(commonChannel != null) return commonChannel;
-        Store.ChannelInfo info = store.getCommonChannel(id, type);
+        Store.ChannelInfo info = store.getChannel(id, type);
         if (info == null) return null;
         commonChannel = new CommonChannel();
         commonChannel.ban = info.ban;
@@ -116,7 +108,7 @@ public class ChannelManager {
             allowedList.forEach(c::addBlockList);
         }
         //load channel info
-        Store.ChannelInfo info = store.getCommonChannel(c.id, c.type);
+        Store.ChannelInfo info = store.getChannel(c.id, c.type);
         if(info != null) {
             c.ban = info.ban;
             c.large = info.large;
@@ -124,4 +116,18 @@ public class ChannelManager {
         }
         return c;
     }
+    public void deleteChannelCache(String channelID,byte channelType) {
+        String k = channelID+"-"+channelType;
+
+//        if(channelType == CS.ChannelType.Person) {
+//            personChannels.remove(k);
+//            return;
+//        }
+        if(channelType == CS.ChannelType.Data) {
+            dataChannels.remove(k);
+            return;
+        }
+        channels.remove(k);
+    }
+
 }

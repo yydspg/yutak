@@ -1,12 +1,8 @@
 package com.yutak.im.core;
 
 import com.yutak.im.domain.Conn;
-import com.yutak.im.kit.BufferKit;
-import com.yutak.im.proto.ConnectPacket;
-import com.yutak.im.proto.Packet;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
-import io.vertx.core.buffer.Buffer;
 import io.vertx.core.net.*;
 
 import java.util.ArrayList;

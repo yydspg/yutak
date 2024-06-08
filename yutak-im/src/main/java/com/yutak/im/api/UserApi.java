@@ -9,6 +9,7 @@ import io.vertx.ext.web.RoutingContext;
 
 @RouteHandler("/user")
 public class UserApi {
+    // update user token
     @RouteMapping(path = "/token",method = HttpMethod.POST)
     public Handler<RoutingContext> updateToken() {
         return ctx -> {

@@ -16,8 +16,8 @@ public interface Store {
     void updateUserToken(String uid,String token,byte deviceFlag,byte deviceLevel);
     void updateMessageOfUserCursorNeed(String uid,int messageSeq);
     // channel
-    ChannelInfo getCommonChannel(String channelID,byte channelType);
-    PersonChannel getPersonChannel(String channelID);
+    ChannelInfo getChannel(String channelID,byte channelType);
+//    PersonChannel getPersonChannel(String channelID);
     void setPersonChannel(PersonChannel personChannel);
     void addOrUpdateChannel(ChannelInfo channelInfo);
     void addDataChannel(String channelID,byte channelType);

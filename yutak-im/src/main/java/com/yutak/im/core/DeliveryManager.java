@@ -3,17 +3,17 @@ package com.yutak.im.core;
 import com.yutak.im.domain.Channel;
 import com.yutak.im.domain.Conn;
 import com.yutak.im.domain.Message;
-import com.yutak.im.proto.*;
-import io.vertx.core.Future;
+import com.yutak.im.proto.CS;
+import com.yutak.im.proto.Packet;
+import com.yutak.im.proto.RecvPacket;
+import com.yutak.im.proto.SendPacket;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
-import org.h2.result.UpdatableRow;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class DeliveryManager {
