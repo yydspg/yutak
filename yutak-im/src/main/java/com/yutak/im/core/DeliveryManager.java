@@ -30,7 +30,7 @@ public class DeliveryManager {
     public static DeliveryManager get() {
         return instance;
     }
-
+    // route from tcp connect
     public Handler<Channel> delivery(final Conn conn, List<SendPacket> sendPackets) {
         return  channel -> {
                 List<Message> messages = new ArrayList<>(sendPackets.size());
@@ -39,25 +39,40 @@ public class DeliveryManager {
                     messages.add(buildMessage(messageID,sendPacket,conn));
                 });
             List<String> subscribedUsers = channel.getSubscribedUsers();
-            msg(messages,subscribedUsers,null, conn.uid, conn.deviceID, conn.deviceFlag);
+            routeMsg(messages,subscribedUsers,null, conn.uid, conn.deviceID, conn.deviceFlag);
         };
     }
-    private void msg(List<Message> message, List<String> subscribers, Map<String,Integer> syncOnceMsgSeq,String fromUID,String fromDeviceUID,byte fromDeviceFlag) {
+
+    // process msg,set this method public aim to used in http
+    public void routeMsg(List<Message> message, List<String> subscribers, Map<String,Integer> syncOnceMsgSeq,String fromUID,String fromDeviceUID,byte fromDeviceFlag) {
         if(message.size() == 0|| subscribers.size() == 0) return;
 
-        vertx.executeBlocking(getConn(subscribers,fromUID,fromDeviceFlag,fromDeviceUID))
-                .onComplete(r->{
-                    if(r.succeeded()) {
-                        List<Conn> conns = r.result();
-                        conns.forEach(recvConn->{
-                            List<RecvPacket> recvPackets = new ArrayList<>();
-                            for(Message msg : message) {
-                                recvPackets.add(msg.recvPacket);
-                            }
-                            dataOut(recvConn,recvPackets);
-                        });
-                    }
-                });
+        List<Conn> conns = new ArrayList<>();
+        for(String subscriber : subscribers) {
+            if(!subscriber.equals(fromUID)) {
+                conns.addAll(connectManager.getConnect(subscriber));
+            }
+        }
+        conns.forEach(recvConn->{
+            List<RecvPacket> recvPackets = new ArrayList<>();
+            for(Message msg : message) {
+                recvPackets.add(msg.recvPacket);
+            }
+            dataOut(recvConn,recvPackets);
+        });
+//        vertx.executeBlocking(getConn(subscribers,fromUID,fromDeviceFlag,fromDeviceUID))
+//                .onComplete(r->{
+//                    if(r.succeeded()) {
+//                        List<Conn> conns = r.result();
+//                        conns.forEach(recvConn->{
+//                            List<RecvPacket> recvPackets = new ArrayList<>();
+//                            for(Message msg : message) {
+//                                recvPackets.add(msg.recvPacket);
+//                            }
+//                            dataOut(recvConn,recvPackets);
+//                        });
+//                    }
+//                });
 
     }
     public Handler<Promise<List<Conn>>> getConn(List<String> subscribers, String fromUID, byte deviceFlag, String fromDeviceID) {

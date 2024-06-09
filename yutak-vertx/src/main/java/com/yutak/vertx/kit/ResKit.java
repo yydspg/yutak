@@ -41,6 +41,6 @@ public class ResKit {
         ctx.response().setStatusCode(200).end(JsonObject.mapFrom(o).encode());
     }
     public static void success(RoutingContext ctx) {
-        ctx.response().setStatusCode(200).end();
+        ctx.response().setStatusCode(200).end("ok");
     }
 }

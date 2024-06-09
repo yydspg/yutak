@@ -17,7 +17,7 @@ public interface Store {
     void updateMessageOfUserCursorNeed(String uid,int messageSeq);
     // channel
     ChannelInfo getChannel(String channelID,byte channelType);
-//    PersonChannel getPersonChannel(String channelID);
+    PersonChannel getPersonChannel(String channelID);
     void setPersonChannel(PersonChannel personChannel);
     void addOrUpdateChannel(ChannelInfo channelInfo);
     void addDataChannel(String channelID,byte channelType);

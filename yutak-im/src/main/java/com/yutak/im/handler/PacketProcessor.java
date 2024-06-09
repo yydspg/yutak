@@ -35,8 +35,6 @@ public class PacketProcessor {
     private final Logger log;
     private final YutakNetServer yutakNetServer;
     private final DeliveryManager deliveryManager;
-    // id 生成器
-    private final AtomicLong idGenerator = new AtomicLong(0);
     private Vertx vertx;
     byte[] types = {CS.FrameType.PING,CS.FrameType.SEND,CS.FrameType.RECVACK, (byte) CS.FrameType.SUB};
     private PacketProcessor() {
@@ -77,7 +75,7 @@ public class PacketProcessor {
                 // connect status build
                 final ConnectPacket connectPacket = (ConnectPacket) packet;
                 // build connect
-                vertx.executeBlocking(get().connect(s,connectPacket)).onComplete(res -> {
+                vertx.executeBlocking(get().connect(s, connectPacket)).onComplete(res -> {
                     //connect success
                     if (res.succeeded() && res.result() != null) {
                         s.write((res.result()).encode());
@@ -103,7 +101,6 @@ public class PacketProcessor {
                 //  process msg
                 // TODO  :  这里存在问题啊，packets这样的话就是同步处理每一条
                process(conn);
-
             }
         };
     }
@@ -117,6 +114,7 @@ public class PacketProcessor {
             }
         };
     }
+    // can run in event loop
     private Handler<Promise<ConnAckPacket>> connect(NetSocket s,ConnectPacket connectPacket) {
         return promise -> {
             // auth blocking execute !!!
@@ -223,7 +221,7 @@ public class PacketProcessor {
     }
     private void process(Conn conn) {
         List<Packet> packets = conn.packets;
-
+        // TODO  :  处里完的packet 不需要删除吗？！
         List<Packet> tmpPackets = new ArrayList<>();
         // according type to group packets
         for (int i = 0; i < types.length; i++) {
@@ -265,8 +263,8 @@ public class PacketProcessor {
 //                        deliveryManager.dataOut(conn,r.result());
 //                    });
             channelSendPacketMap.forEach((k, v) -> {
-                vertx.executeBlocking(p->{
-                            p.complete(channelManager.getChannel(v.get(0).channelID,v.get(1).channelType));
+                vertx.executeBlocking(p -> {
+                            p.complete(channelManager.getChannel(v.get(0).channelID, v.get(1).channelType));
                         })
                         .onSuccess(r -> {
                             processChannel(conn,(Channel) r).handle(v);
@@ -278,7 +276,9 @@ public class PacketProcessor {
 
         // response sendAck Packet
 //        deliveryManager.dataOut(conn,sendAckPackets);
-    private void subProcess(Conn conn,List<SubPacket> packets) {}
+    private void subProcess(Conn conn,List<SubPacket> packets) {
+
+    }
     private void recvAckProcess(Conn conn,List<RecvPacket> recvPackets) {
 
     }

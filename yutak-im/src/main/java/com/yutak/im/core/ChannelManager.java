@@ -13,11 +13,12 @@ import java.util.concurrent.ConcurrentHashMap;
 
 // 频道管理
 public class ChannelManager {
-    private final String tmpChannelPrefix = "tmp";
+    public final String tmpChannelPrefix = "tmp";
     private Store store;
     private final ConcurrentHashMap<String, CommonChannel> channels;
     private final ConcurrentHashMap<String,CommonChannel> tmpChannels;
     private final ConcurrentHashMap<String, CommonChannel> dataChannels;
+    private final ConcurrentHashMap<String, PersonChannel> personChannels;
     private Options options;
     public final Vertx vertx;
     private static ChannelManager instance;
@@ -28,6 +29,7 @@ public class ChannelManager {
         this.channels = new ConcurrentHashMap<>();
         this.tmpChannels = new ConcurrentHashMap<>();
         this.dataChannels = new ConcurrentHashMap<>();
+        this.personChannels = new ConcurrentHashMap<>();
         store = H2Store.get();
         options = Options.get();
         vertx = YutakNetServer.get().vertx;
@@ -49,16 +51,16 @@ public class ChannelManager {
         return getChannelFromCacheOrStore(id,type);
     }
     //TODO 这里肯定是需要优化的，如果全部放在内存里，假设1000人，每人200个好友，就有2 0000 条数据，这是不能接受的，可以使用lRU算法优化
-    private PersonChannel getPersonChannel(String id) {
+    public PersonChannel getPersonChannel(String fakeChannelID) {
         // in memory
+        PersonChannel c = personChannels.get(fakeChannelID);
+        if(c != null) {
+            return c;
+        }
         // need to load from store
-//        vertx.executeBlocking(promise->{
-//            promise.complete(store.getPersonChannel(id));
-//        }).onComplete(t->{
-//            return t;
-//        });
-//        channel = store.getPersonChannel(id);
-            return  null;
+        c = store.getPersonChannel(fakeChannelID);
+        personChannels.put(fakeChannelID, c);
+        return c;
     }
 
     // TODO  :  这里也是需要改的，不然dataChannel的意义呢？
@@ -100,12 +102,12 @@ public class ChannelManager {
         //load deniedList
         List<String> deniedList = store.getDeniedList(c.id, c.type);
         if(deniedList != null && deniedList.size() > 0) {
-            deniedList.forEach(c::addBlockList);
+            c.addBlockList(deniedList);
         }
         //load allowedList
         List<String> allowedList = store.getAllowedList(c.id, c.type);
         if(allowedList != null && allowedList.size() > 0) {
-            allowedList.forEach(c::addBlockList);
+            c.addWhiteList(allowedList);
         }
         //load channel info
         Store.ChannelInfo info = store.getChannel(c.id, c.type);
@@ -129,5 +131,13 @@ public class ChannelManager {
         }
         channels.remove(k);
     }
-
+    public void createTmpChannel(String channelID,byte channelType,List<String> subscribers) {
+        String k = channelID+"-"+channelType;
+        CommonChannel c = new CommonChannel();
+        subscribers.forEach(c::addSubscriber);
+        tmpChannels.put(k,c);
+    }
+    public boolean isTmpChannel(String channelID) {
+        return channelID.contains(tmpChannelPrefix);
+    }
 }

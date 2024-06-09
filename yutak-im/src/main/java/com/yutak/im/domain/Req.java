@@ -32,5 +32,30 @@ public class Req {
         public List<String> uids;
         public byte channelType;
     }
-
+    public static class SendMessage {
+        public MessageHeader header;
+        public String clientMsgNo;
+        public String streamNo;
+        public String fromUID;
+        public String channelID;
+        public byte channelType;
+        public int expire;
+        public byte[] payload;
+        public List<String> subscribers;
+    }
+    public static class MessageHeader {
+        public boolean noPersist;
+        public boolean redDot;
+        public boolean syncOnce;
+    }
+    public static class DeviceQuit {
+        public String uid;
+        public byte deviceFlag;
+    }
+    public static class UpdateToken {
+        public String uid;
+        public String token;
+        public byte deviceFlag;
+        public byte deviceLevel;
+    }
 }

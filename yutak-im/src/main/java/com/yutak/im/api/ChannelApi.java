@@ -1,11 +1,10 @@
 package com.yutak.im.api;
 
 import com.yutak.im.core.ChannelManager;
-import com.yutak.im.domain.Channel;
 import com.yutak.im.domain.CommonChannel;
 import com.yutak.im.domain.Req;
-import com.yutak.im.kit.BufferKit;
 import com.yutak.im.proto.CS;
+import com.yutak.im.store.H2Store;
 import com.yutak.im.store.Store;
 import com.yutak.vertx.anno.RouteHandler;
 import com.yutak.vertx.anno.RouteMapping;
@@ -13,6 +12,7 @@ import com.yutak.vertx.core.HttpMethod;
 import com.yutak.vertx.kit.ReqKit;
 import com.yutak.vertx.kit.ResKit;
 import io.vertx.core.Handler;
+import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
 
@@ -24,6 +24,11 @@ import java.util.List;
 public class ChannelApi {
     private ChannelManager channelManager;
     private Store store;
+
+    public ChannelApi() {
+        channelManager = ChannelManager.get();
+        store = H2Store.get();
+    }
     @RouteMapping(path = "/create",method = HttpMethod.POST,block = true)
     public Handler<RoutingContext> create() {
         return ctx -> {
@@ -69,16 +74,28 @@ public class ChannelApi {
                 channel.ban = c.ban;
                 channel.disband = c.disband;
             }
-            ResKit.success(ctx);
+            ResKit.success(ctx,c);
         };
     }
     @RouteMapping(path = "/delete",method = HttpMethod.POST,block = true)
     public Handler<RoutingContext> delete() {
         return ctx -> {
             JsonObject json = ReqKit.getJSON(ctx);
+            if(json == null) {
+                ResKit.error(ctx,"no  data info");
+                return;
+            }
             String channelId = json.getString("channelId");
             byte channelType = Byte.parseByte(json.getString("channelType"));
 
+            if(channelId == null || channelId.isEmpty()) {
+                ResKit.error(ctx,"channelId is null");
+                return;
+            }
+            if (channelType == CS.ChannelType.Person) {
+                ResKit.error(ctx,"channelType not support person");
+                return;
+            }
             // persistence
             Store.ChannelInfo info = store.getChannel(channelId, channelType);
             if(info == null) {
@@ -352,5 +369,26 @@ public class ChannelApi {
         return ctx -> {
 
         };
+    }
+
+    public static void main(String[] args) {
+        Req.ChannelCreate c = new Req.ChannelCreate();
+        c.channelInfo = new Store.ChannelInfo();
+        c.channelInfo.channelType = 1;
+        c.channelInfo.channelId = "123";
+        c.subscribers = new ArrayList<>();
+        c.subscribers.add("dfawdf");
+        c.subscribers.add("asfew");
+        JsonObject json = new JsonObject();
+//        json = JsonObject.mapFrom(c);
+        String jsonString = "{\"channelInfo\":{\"channelId\":\"123\",\"channel\":\"Test Channel\"},\"subscribers\":[\"user1\",\"user2\"]}";
+
+
+        // 从JSON字符串解析回ChannelCreate对象
+        String encode = Json.encode(c);
+        System.out.println(encode);
+        Req.ChannelCreate channelCreate = Json.decodeValue(encode, c.getClass());
+        System.out.println(channelCreate);
+
     }
 }

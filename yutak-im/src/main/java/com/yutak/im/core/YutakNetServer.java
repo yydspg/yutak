@@ -24,6 +24,7 @@ public class YutakNetServer {
     private Store store;
     private NetServer netServer;
     public Vertx vertx;
+    public AtomicLong ID; ;
     private final static YutakNetServer yutakNetServer;
     static {
         yutakNetServer = new YutakNetServer();
@@ -35,6 +36,7 @@ public class YutakNetServer {
         IPBlockList = new ConcurrentHashMap<>();
         startTime = LocalDateTime.now();
         vertx = Vertx.vertx();
+        ID = new AtomicLong(0);
     }
 
     public static YutakNetServer get() {

@@ -84,6 +84,12 @@ public interface CS {
             byte web = 1;
             byte pc = 2;
             byte sys = 3;
+            byte all = -1;
         }
+    }
+    interface Stream {
+        byte start = 0;
+        byte ing = 1;
+        byte end = 2;
     }
 }

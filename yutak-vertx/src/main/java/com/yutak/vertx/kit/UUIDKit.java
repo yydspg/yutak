@@ -1,4 +1,4 @@
-package com.yutak.server.kit;
+package com.yutak.vertx.kit;
 
 import java.util.UUID;
 

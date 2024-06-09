@@ -20,7 +20,6 @@
 
     <modules>
         <module>yutak-web</module>
-        <module>yutak-vertx</module>
         <module>codec</module>
         <module>yutak-orm</module>
         <module>yutak-im</module>

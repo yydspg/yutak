@@ -72,6 +72,7 @@ public class CommonChannel extends Channel {
     public void removeWhiteList(List<String> list) {
         list.forEach(t->{whiteList.remove(t);});
     }
+
     public List<String> getTmpSubscribers() {
         return tmpSubscribers.keySet().stream().toList();
     }

@@ -56,9 +56,9 @@ public class H2Store implements Store {
         // 10
         sql.add("insert into data_channel (channel_id) values (?)");
         // 11
-        sql.add("insert into person_channel (channel_id,subscriber,ban) values (?,?,?)");
+        sql.add("insert into person_channel (channel_id,ban) values (?,?)");
         //12
-        sql.add("select channel_id,subscriber,ban from person_channel where channel_id = ?");
+        sql.add("select channel_id,ban from person_channel where channel_id = ?");
     }
     public static H2Store get() {return h2Store;}
     @SneakyThrows
@@ -166,6 +166,21 @@ public class H2Store implements Store {
         p.close();
         return c;
     }
+
+    @SneakyThrows
+    @Override
+    public PersonChannel getPersonChannel(String channelID) {
+        PreparedStatement p = get(sql.get(12));
+        p.setString(1,channelID);
+        ResultSet set = p.executeQuery();
+        set.next();
+        PersonChannel pc = new PersonChannel();
+        pc.channelID = channelID;
+        pc.ban = set.getBoolean(2);
+        p.close();
+        set.close();
+        return pc;
+    }
 //
 //    @SneakyThrows
 //    @Override
@@ -190,9 +205,9 @@ public class H2Store implements Store {
     @Override
     public void setPersonChannel(PersonChannel personChannel) {
         PreparedStatement p = get(sql.get(11));
-        p.setString(1,personChannel.id);
+        p.setString(1,personChannel.channelID);
 //        p.setString(2,personChannel.subscriber);
-        p.setBoolean(3,personChannel.ban);
+        p.setBoolean(2,personChannel.ban);
         p.execute();
     }
 
