@@ -3,6 +3,7 @@ package com.yutak.vertx.kit;
 import io.vertx.core.Future;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.http.HttpServerResponse;
+import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
 
@@ -38,7 +39,8 @@ public class ResKit {
         ctx.response().setStatusCode(500).end(res.toString());
     }
     public static void success(RoutingContext ctx,Object o) {
-        ctx.response().setStatusCode(200).end(JsonObject.mapFrom(o).encode());
+        String encode = Json.encode(o);
+        ctx.response().setStatusCode(200).end(encode);
     }
     public static void success(RoutingContext ctx) {
         ctx.response().setStatusCode(200).end("ok");

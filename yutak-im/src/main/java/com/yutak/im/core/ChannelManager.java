@@ -18,7 +18,7 @@ public class ChannelManager {
     private final ConcurrentHashMap<String, CommonChannel> channels;
     private final ConcurrentHashMap<String,CommonChannel> tmpChannels;
     private final ConcurrentHashMap<String, CommonChannel> dataChannels;
-    private final ConcurrentHashMap<String, PersonChannel> personChannels;
+    private final ConcurrentHashMap<String, CommonChannel> personChannels;
     private Options options;
     public final Vertx vertx;
     private static ChannelManager instance;
@@ -38,28 +38,34 @@ public class ChannelManager {
     public static ChannelManager get() {
         return instance;
     }
+    public void createOrUpdateChannel(CommonChannel channel) {
+
+    }
     public CommonChannel getChannel(String id, byte type) {
         if(id.contains(tmpChannelPrefix)) {
             return tmpChannels.get(id+"-"+type);
         }
-//        if(type == CS.ChannelType.Person) {
-//            return getPersonChannel(id);
-//        }
+        if(type == CS.ChannelType.Person) {
+            return getPersonChannel(id);
+        }
         if(type == CS.ChannelType.Data) {
             return getOrCreateDataChannel(id,type);
         }
         return getChannelFromCacheOrStore(id,type);
     }
     //TODO 这里肯定是需要优化的，如果全部放在内存里，假设1000人，每人200个好友，就有2 0000 条数据，这是不能接受的，可以使用lRU算法优化
-    public PersonChannel getPersonChannel(String fakeChannelID) {
+    public CommonChannel getPersonChannel(String fakeChannelID) {
         // in memory
-        PersonChannel c = personChannels.get(fakeChannelID);
+        CommonChannel c = personChannels.get(fakeChannelID);
         if(c != null) {
             return c;
         }
         // need to load from store
-        c = store.getPersonChannel(fakeChannelID);
-        personChannels.put(fakeChannelID, c);
+        c = new CommonChannel();
+        c.id = fakeChannelID;
+        c.type = CS.ChannelType.Person;
+        // c = store.getPersonChannel(fakeChannelID);
+        personChannels.put(fakeChannelID, loadChannelData(c));
         return c;
     }
 

@@ -59,6 +59,7 @@ public class ServerBoot {
         if (Objects.isNull(serverConfig.getVertx())) {
             EventBusOptions eventBusOptions = new EventBusOptions();
             eventBusOptions.setConnectTimeout(serverConfig.getEventBusconnectTimeout());
+            // vertx Options ! this is important
             Vertx vertx = Vertx.vertx(new VertxOptions().setWorkerPoolSize(serverConfig.getWorkPoolSize())
                     .setEventBusOptions(eventBusOptions));
             serverConfig.setVertx(vertx);

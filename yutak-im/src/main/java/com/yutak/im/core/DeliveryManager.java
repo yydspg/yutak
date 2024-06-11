@@ -1,15 +1,16 @@
 package com.yutak.im.core;
 
-import com.yutak.im.domain.Channel;
-import com.yutak.im.domain.Conn;
-import com.yutak.im.domain.Message;
+import com.yutak.im.domain.*;
 import com.yutak.im.proto.CS;
 import com.yutak.im.proto.Packet;
 import com.yutak.im.proto.RecvPacket;
 import com.yutak.im.proto.SendPacket;
+import com.yutak.im.store.H2Store;
+import com.yutak.im.store.Store;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
+import io.vertx.core.json.JsonObject;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -22,10 +23,13 @@ public class DeliveryManager {
     private ConnectManager connectManager;
     private Options options;
     private Vertx vertx;
+    private Store store;
     private final  static DeliveryManager instance = new DeliveryManager();
     private final AtomicLong ID = new AtomicLong(0);
     private DeliveryManager() {
         vertx = YutakNetServer.get().vertx;
+        connectManager = ConnectManager.get();
+        store = H2Store.get();
     }
     public static DeliveryManager get() {
         return instance;
@@ -50,7 +54,10 @@ public class DeliveryManager {
         List<Conn> conns = new ArrayList<>();
         for(String subscriber : subscribers) {
             if(!subscriber.equals(fromUID)) {
-                conns.addAll(connectManager.getConnect(subscriber));
+                List<Conn> connect = connectManager.getConnect(subscriber);
+                if(connect != null && connect.size() > 0) {
+                    conns.addAll(connectManager.getConnect(subscriber));
+                }
             }
         }
         conns.forEach(recvConn->{
@@ -93,7 +100,9 @@ public class DeliveryManager {
         conn.outMsgs.getAndIncrement();
 
         if(packets.size() == 0)return;
-        packets.forEach(p -> {conn.netSocket.write(((Packet)p).encode());});
+        packets.forEach(p -> {
+            conn.netSocket.write(((Packet)p).encode());
+        });
     }
     private Message buildMessage(long messageID,SendPacket s,Conn conn) {
         RecvPacket r = new RecvPacket();

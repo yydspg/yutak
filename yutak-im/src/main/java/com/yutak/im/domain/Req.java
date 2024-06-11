@@ -1,7 +1,10 @@
 package com.yutak.im.domain;
 
 import com.yutak.im.store.Store;
+import io.vertx.core.json.Json;
 
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.List;
 
 public class Req {
@@ -57,5 +60,46 @@ public class Req {
         public String token;
         public byte deviceFlag;
         public byte deviceLevel;
+    }
+    public static class QueryMessage {
+        public String channelId;
+        public byte channelType;
+        public List<Integer> seqs;
+    }
+    public static class StreamStart {
+        public Req.MessageHeader header;
+        public String clientMsgNo;
+        public String fromUID;
+        public String channelID;
+        public byte channelType;
+        public byte[] payload;
+    }
+    public static class StreamEnd {
+        public String channelId;
+        public byte channelType;
+        public String streamNo;
+    }
+    public static class Sync {
+        public String uid;
+        public int messageSeq;
+        public int limit;
+    }
+    public static class SyncAck{
+        public String uid;
+        public int lastMessageSeq;
+    }
+    public static void main(String[] args) {
+        SendMessage sendMessage = new SendMessage();
+        sendMessage.header = new MessageHeader();
+        sendMessage.header.noPersist = false;
+        sendMessage.header.redDot = false;
+        sendMessage.header.syncOnce = false;
+        sendMessage.subscribers = new ArrayList<>();
+        sendMessage.subscribers.add(":!233213");
+        sendMessage.fromUID = "23";
+        String s = new String("12312");
+        sendMessage.payload = s.getBytes(StandardCharsets.UTF_8);
+        String encode = Json.encode(sendMessage);
+        System.out.println(encode);
     }
 }

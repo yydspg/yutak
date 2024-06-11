@@ -1,9 +1,6 @@
 package com.yutak.im.store;
 
-import com.yutak.im.domain.Conversation;
-import com.yutak.im.domain.Message;
-import com.yutak.im.domain.PersonChannel;
-import com.yutak.im.domain.Stream;
+import com.yutak.im.domain.*;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import lombok.Setter;
@@ -23,8 +20,8 @@ public class H2Store implements Store {
     private  H2Store() {
         HikariConfig c = new HikariConfig();
         c.setDriverClassName("org.h2.Driver");
-        c.setMaximumPoolSize(200);
-        c.setMinimumIdle(30);
+        c.setMaximumPoolSize(20);
+        c.setMinimumIdle(3);
         c.setAutoCommit(true);
         c.setPoolName("h2");
         c.setJdbcUrl("jdbc:h2:/home/paul/data/yutak");
@@ -168,7 +165,7 @@ public class H2Store implements Store {
     }
 
     @SneakyThrows
-    @Override
+
     public PersonChannel getPersonChannel(String channelID) {
         PreparedStatement p = get(sql.get(12));
         p.setString(1,channelID);
@@ -449,7 +446,7 @@ public class H2Store implements Store {
     }
 
     @Override
-    public List<Stream.Item> getStreamItems(String channelID, byte channelType, String streamNo) {
+    public List<Res.StreamItem> getStreamItems(String channelID, byte channelType, String streamNo) {
         return List.of();
     }
 

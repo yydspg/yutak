@@ -1,9 +1,6 @@
 package com.yutak.im.store;
 
-import com.yutak.im.domain.Conversation;
-import com.yutak.im.domain.Message;
-import com.yutak.im.domain.PersonChannel;
-import com.yutak.im.domain.Stream;
+import com.yutak.im.domain.*;
 
 import java.util.List;
 
@@ -17,7 +14,7 @@ public interface Store {
     void updateMessageOfUserCursorNeed(String uid,int messageSeq);
     // channel
     ChannelInfo getChannel(String channelID,byte channelType);
-    PersonChannel getPersonChannel(String channelID);
+//    PersonChannel getPersonChannel(String channelID);
     void setPersonChannel(PersonChannel personChannel);
     void addOrUpdateChannel(ChannelInfo channelInfo);
     void addDataChannel(String channelID,byte channelType);
@@ -63,7 +60,7 @@ public interface Store {
     void streamEnd(String channelID,byte channelType,String streamNo);
     Stream.Meta getStreamMeta(String channelID,byte channelType,String streamNo);
     int appendStreamItem(String channelID,byte channelType,String streamNo,Stream.Item item);
-    List<Stream.Item> getStreamItems(String channelID,byte channelType,String streamNo);
+    List<Res.StreamItem> getStreamItems(String channelID, byte channelType, String streamNo);
     // ip
     void addIpBlockList(List<String> ips);
     void removeIpBlockList(List<String> ips);
