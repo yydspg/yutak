@@ -14,6 +14,7 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
 
+import java.sql.Timestamp;
 import java.util.List;
 
 @RouteHandler("/system")
@@ -65,5 +66,10 @@ public class SystemApi {
         return ctx -> {
             ResKit.success(ctx,YutakNetServer.get().IPBlockList.keySet());
         };
+    }
+
+    public static void main(String[] args) {
+        System.out.println(System.currentTimeMillis());
+
     }
 }

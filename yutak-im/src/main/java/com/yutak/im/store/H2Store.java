@@ -1,14 +1,17 @@
 package com.yutak.im.store;
 
 import com.yutak.im.domain.*;
+import com.yutak.im.proto.CS;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
-import lombok.Setter;
 import lombok.SneakyThrows;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.sql.*;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -54,8 +57,25 @@ public class H2Store implements Store {
         sql.add("insert into data_channel (channel_id) values (?)");
         // 11
         sql.add("insert into person_channel (channel_id,ban) values (?,?)");
-        //12
+        // 12
         sql.add("select channel_id,ban from person_channel where channel_id = ?");
+        // 13 this sql need strict inspect
+        sql.add("create table ? ( uid VARCHAR(40) NOT NULL DEFAULT '',create_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT 'created_timestamp',PRIMARY KEY (uid))");
+        // 14 this sql need strict inspect
+        sql.add("drop table ?");
+        // 15
+        sql.add("insert into system_channel (uid) values (?)");
+        // 16
+        sql.add("insert into ? uid values ?");
+        // 17
+        sql.add("drop from system_channel where uid = ?");
+        // 18
+        sql.add("drop from ? where uid = ?");
+        // 19 todo here has performance error
+        sql.add("select  uid  from system_channel ");
+        // 20
+        sql.add("select uid from (?)");
+
     }
     public static H2Store get() {return h2Store;}
     @SneakyThrows
@@ -199,7 +219,6 @@ public class H2Store implements Store {
 //    }
 
     @SneakyThrows
-    @Override
     public void setPersonChannel(PersonChannel personChannel) {
         PreparedStatement p = get(sql.get(11));
         p.setString(1,personChannel.channelID);
@@ -207,7 +226,7 @@ public class H2Store implements Store {
         p.setBoolean(2,personChannel.ban);
         p.execute();
     }
-
+    // this statement do not support system info,add system channel can not br used in this statement
     @SneakyThrows
     @Override
     public void addOrUpdateChannel(ChannelInfo channelInfo) {
@@ -217,13 +236,13 @@ public class H2Store implements Store {
             p.setBoolean(1,channelInfo.ban);
             p.setBoolean(2,channelInfo.disband);
             p.setBoolean(3,channelInfo.large);
-            p.setString(4,channelInfo.channelId+channelInfo.channelType);
+            p.setString(4,channelInfo.channelId+"-"+channelInfo.channelType);
             p.executeUpdate();
             p.close();
         }else {
             // insert
             PreparedStatement p = get(sql.get(6));
-            p.setString(1, channelInfo.channelId + channelInfo.channelType);
+            p.setString(1, channelInfo.channelId + "-" +channelInfo.channelType);
             p.setBoolean(2, channelInfo.ban);
             p.setBoolean(3, channelInfo.disband);
             p.setBoolean(4, channelInfo.large);
@@ -244,7 +263,7 @@ public class H2Store implements Store {
     @Override
     public boolean existChannel(String channelID, byte channelType) {
         PreparedStatement p = get(sql.get(3));
-        p.setString(1,channelID+channelType);
+        p.setString(1,channelID+"-"+channelType);
         ResultSet set = p.executeQuery();
         if (!set.next()) {
             //no data exists
@@ -259,20 +278,68 @@ public class H2Store implements Store {
         p.close();
         return false;
     }
-
+    // system
+    @SneakyThrows
     @Override
     public void addSubscribers(String channelID, byte channelType, List<String> subscribers) {
-
+        if (channelType == CS.ChannelType.System) {
+            PreparedStatement p = get(sql.get(15));
+            for (String subscriber : subscribers) {
+                p.setString(1,subscriber);
+                p.execute();
+            }
+        }else {
+            PreparedStatement p = get(sql.get(16));
+            for (String subscriber : subscribers) {
+                p.setString(1,channelID+"-"+channelType);
+                p.setString(2,subscriber);
+                p.execute();
+            }
+        }
     }
 
+    @SneakyThrows
     @Override
     public void removeSubscribers(String channelID, byte channelType, List<String> subscribers) {
-
+        if(channelType == CS.ChannelType.System){
+            PreparedStatement p = get(sql.get(17));
+            for (String subscriber : subscribers) {
+                p.setString(1,subscriber);
+                p.execute();
+            }
+        }else {
+            PreparedStatement p = get(sql.get(18));
+            for (String subscriber : subscribers) {
+                p.setString(1,channelID+"-"+channelType);
+                p.setString(2,subscriber);
+                p.execute();
+            }
+        }
     }
 
+    @SneakyThrows
     @Override
     public List<String> getSubscribers(String channelID, byte channelType) {
-        return List.of();
+        ArrayList<String> res = new ArrayList<>();
+        if(channelType == CS.ChannelType.System){
+            PreparedStatement p = get(sql.get(19));
+            ResultSet set = p.executeQuery();
+            while(set.next()) {
+                String string = set.getString(1);
+                res.add(string);
+            }
+            p.close();
+            set.close();
+        }else {
+            String s = "select uid from " + channelID +"-" + channelType;
+            Statement stat = hikariDataSource.getConnection().createStatement();
+            ResultSet set = stat.executeQuery(s);
+            while(set.next()) {
+                String string = set.getString(1);
+                res.add(string);
+            }
+        }
+        return res;
     }
 
     @Override
@@ -453,7 +520,7 @@ public class H2Store implements Store {
     @SneakyThrows
     @Override
     public void addIpBlockList(List<String> ips) {
-        // 目前不可以违反主键约束
+        // 目前不可以违反主键唯一约束
         PreparedStatement p = get(sql.get(7));
         for (int i = 0; i < ips.size(); i++) {
             p.setString(1, ips.get(i));
