@@ -66,11 +66,4 @@ public interface Store {
     void removeIpBlockList(List<String> ips);
     List<String> getIpBlockList();
 
-    class ChannelInfo {
-        public String channelId;
-        public byte channelType;
-        public boolean ban;
-        public boolean large;
-        public boolean disband;
-    }
 }

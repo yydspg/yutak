@@ -1,9 +1,8 @@
 package com.yutak.im.core;
 
-import com.yutak.im.domain.Channel;
 import com.yutak.im.domain.CommonChannel;
-import com.yutak.im.domain.PersonChannel;
 import com.yutak.im.proto.CS;
+import com.yutak.im.store.ChannelInfo;
 import com.yutak.im.store.H2Store;
 import com.yutak.im.store.Store;
 import io.vertx.core.Vertx;
@@ -87,12 +86,12 @@ public class ChannelManager {
         String k = id+"-"+type;
         CommonChannel commonChannel = channels.get(k);
         if(commonChannel != null) return commonChannel;
-        Store.ChannelInfo info = store.getChannel(id, type);
+        ChannelInfo info = store.getChannel(id, type);
         if (info == null) return null;
         commonChannel = new CommonChannel();
-        commonChannel.ban = info.ban;
-        commonChannel.large = info.large;
-        commonChannel.disband = info.disband;
+//        commonChannel.ban = info.ban;
+//        commonChannel.large = info.large;
+//        commonChannel.disband = info.disband;
         commonChannel.id = id;
         commonChannel.type = type;
         loadChannelData(commonChannel);
@@ -116,11 +115,11 @@ public class ChannelManager {
             c.addWhiteList(allowedList);
         }
         //load channel info
-        Store.ChannelInfo info = store.getChannel(c.id, c.type);
+        ChannelInfo info = store.getChannel(c.id, c.type);
         if(info != null) {
-            c.ban = info.ban;
-            c.large = info.large;
-            c.disband = info.disband;
+//            c.ban = info.ban;
+//            c.large = info.large;
+//            c.disband = info.disband;
         }
         return c;
     }

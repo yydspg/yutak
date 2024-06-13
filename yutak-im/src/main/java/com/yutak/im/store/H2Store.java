@@ -91,9 +91,9 @@ public class H2Store implements Store {
         ChannelInfo c = new ChannelInfo();
         c.channelId = "1234";
         c.channelType =(byte) 0;
-        c.large = true;
-        c.disband = false;
-        c.ban = true;
+//        c.large = true;
+//        c.disband = false;
+//        c.ban = true;
         h2Store.addOrUpdateChannel(c);
         ArrayList<String> ips = new ArrayList<>();
         ips.add("127.0.0.1");
@@ -176,9 +176,9 @@ public class H2Store implements Store {
         ChannelInfo c = new ChannelInfo();
         c.channelId = channelID;
         c.channelType  = channelType;
-        c.ban = set.getBoolean(3);
-        c.disband = set.getBoolean(4);
-        c.large = set.getBoolean(5);
+//        c.ban = set.getBoolean(3);
+//        c.disband = set.getBoolean(4);
+//        c.large = set.getBoolean(5);
         set.close();
         p.close();
         return c;
@@ -233,9 +233,9 @@ public class H2Store implements Store {
         if(existChannel(channelInfo.channelId,channelInfo.channelType)){
             // update
             PreparedStatement p = get(sql.get(5));
-            p.setBoolean(1,channelInfo.ban);
-            p.setBoolean(2,channelInfo.disband);
-            p.setBoolean(3,channelInfo.large);
+//            p.setBoolean(1,channelInfo.ban);
+//            p.setBoolean(2,channelInfo.disband);
+//            p.setBoolean(3,channelInfo.large);
             p.setString(4,channelInfo.channelId+"-"+channelInfo.channelType);
             p.executeUpdate();
             p.close();
@@ -243,9 +243,9 @@ public class H2Store implements Store {
             // insert
             PreparedStatement p = get(sql.get(6));
             p.setString(1, channelInfo.channelId + "-" +channelInfo.channelType);
-            p.setBoolean(2, channelInfo.ban);
-            p.setBoolean(3, channelInfo.disband);
-            p.setBoolean(4, channelInfo.large);
+//            p.setBoolean(2, channelInfo.ban);
+//            p.setBoolean(3, channelInfo.disband);
+//            p.setBoolean(4, channelInfo.large);
             p.execute();
             p.close();
         }

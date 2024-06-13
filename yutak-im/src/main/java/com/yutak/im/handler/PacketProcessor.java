@@ -9,6 +9,7 @@ import com.yutak.im.kit.BufferKit;
 import com.yutak.im.kit.SecurityKit;
 import com.yutak.im.kit.SocketKit;
 import com.yutak.im.proto.*;
+import com.yutak.im.store.ChannelInfo;
 import com.yutak.im.store.H2Store;
 import com.yutak.im.store.Store;
 import com.yutak.vertx.kit.StringKit;
@@ -152,17 +153,17 @@ public class PacketProcessor {
                     }
                     // check user status
                     //todo
-                    Store.ChannelInfo channel = store.getChannel(connectPacket.UID, CS.ChannelType.Person);
+                    ChannelInfo channel = store.getChannel(connectPacket.UID, CS.ChannelType.Person);
 
                     if (channel == null) {
                         promise.fail("client channel is empty");
                         return;
                     }
-                    if (channel.ban) {
-//                                log.error("user status ban");
-                        promise.fail("client ban");
-                        return;
-                    }
+//                    if (channel.ban) {
+////                                log.error("user status ban");
+//                        promise.fail("client ban");
+//                        return;
+//                    }
                     // TODO  :  this security need more!!! 中间加密的一步没做呢！！！ aesIV...
                     List<String> pair = SecurityKit.getPair();
 

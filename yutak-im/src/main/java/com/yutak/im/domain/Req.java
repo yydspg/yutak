@@ -1,6 +1,6 @@
 package com.yutak.im.domain;
 
-import com.yutak.im.store.Store;
+import com.yutak.im.store.ChannelInfo;
 import io.vertx.core.json.Json;
 
 import java.nio.charset.StandardCharsets;
@@ -9,7 +9,7 @@ import java.util.List;
 
 public class Req {
     public static class ChannelCreate {
-        public Store.ChannelInfo channelInfo;
+        public ChannelInfo channelInfo;
         public List<String> subscribers;
     }
     public static class AddSubscriber {

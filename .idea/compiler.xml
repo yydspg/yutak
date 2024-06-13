@@ -14,12 +14,16 @@
         <module name="yutak-im" />
       </profile>
     </annotationProcessing>
+    <bytecodeTargetLevel>
+      <module name="yutak-store" target="17" />
+    </bytecodeTargetLevel>
   </component>
   <component name="JavacSettings">
     <option name="ADDITIONAL_OPTIONS_OVERRIDE">
       <module name="codec" options="-parameters" />
       <module name="yutak-im" options="-parameters" />
       <module name="yutak-orm" options="-parameters" />
+      <module name="yutak-store" options="-parameters" />
       <module name="yutak-vertx" options="" />
       <module name="yutak-web" options="-parameters" />
     </option>

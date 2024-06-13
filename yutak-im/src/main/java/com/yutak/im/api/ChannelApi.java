@@ -4,6 +4,7 @@ import com.yutak.im.core.ChannelManager;
 import com.yutak.im.domain.CommonChannel;
 import com.yutak.im.domain.Req;
 import com.yutak.im.proto.CS;
+import com.yutak.im.store.ChannelInfo;
 import com.yutak.im.store.H2Store;
 import com.yutak.im.store.Store;
 import com.yutak.vertx.anno.RouteHandler;
@@ -61,7 +62,7 @@ public class ChannelApi {
     @RouteMapping(path = "/info",method = HttpMethod.POST,block = true)
     public Handler<RoutingContext> info() {
         return ctx -> {
-            Store.ChannelInfo c = ReqKit.getObjectInBody(ctx, Store.ChannelInfo.class);
+            ChannelInfo c = ReqKit.getObjectInBody(ctx, ChannelInfo.class);
             if (c == null) {
                 ResKit.error(ctx,"no  data info");
                 return ;
@@ -70,9 +71,9 @@ public class ChannelApi {
             // update info
             if(c.channelType == CS.ChannelType.Group) {
                 CommonChannel channel = channelManager.getChannel(c.channelId, c.channelType);
-                channel.large = c.large;
-                channel.ban = c.ban;
-                channel.disband = c.disband;
+//                channel.large = c.large;
+//                channel.ban = c.ban;
+//                channel.disband = c.disband;
             }
             ResKit.success(ctx,c);
         };
@@ -97,12 +98,12 @@ public class ChannelApi {
                 return;
             }
             // persistence
-            Store.ChannelInfo info = store.getChannel(channelId, channelType);
+            ChannelInfo info = store.getChannel(channelId, channelType);
             if(info == null) {
                 ResKit.success(ctx);
                 return;
             }
-            info.ban = true;
+            info.ban = 1;
             store.addOrUpdateChannel(info);
             store.removeAllSubscribers(channelId, channelType);
             // sync cache
@@ -373,7 +374,7 @@ public class ChannelApi {
 
     public static void main(String[] args) {
         Req.ChannelCreate c = new Req.ChannelCreate();
-        c.channelInfo = new Store.ChannelInfo();
+        c.channelInfo = new ChannelInfo();
         c.channelInfo.channelType = 1;
         c.channelInfo.channelId = "123";
         c.subscribers = new ArrayList<>();
