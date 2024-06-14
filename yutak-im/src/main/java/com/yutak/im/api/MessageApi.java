@@ -258,7 +258,7 @@ public class MessageApi {
                 promise.fail("channel not found");
                 return ;
             }
-            if (channel.large && sendReq.header.syncOnce && !sendReq.header.noPersist) {
+            if (channel.large == 1 && sendReq.header.syncOnce && !sendReq.header.noPersist) {
                 // not support
                 promise.fail("not support sync once in large channel");
                 return;

@@ -35,7 +35,7 @@ public class DeliveryManager {
         return instance;
     }
     // route from tcp connect
-    public Handler<Channel> delivery(final Conn conn, List<SendPacket> sendPackets) {
+    public Handler<CommonChannel> delivery(final Conn conn, List<SendPacket> sendPackets) {
         return  channel -> {
                 List<Message> messages = new ArrayList<>(sendPackets.size());
                 sendPackets.forEach(sendPacket -> {

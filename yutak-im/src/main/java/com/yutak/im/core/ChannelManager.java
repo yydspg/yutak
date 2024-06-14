@@ -5,15 +5,20 @@ import com.yutak.im.proto.CS;
 import com.yutak.im.store.ChannelInfo;
 import com.yutak.im.store.H2Store;
 import com.yutak.im.store.Store;
+import com.yutak.im.store.YutakStore;
 import io.vertx.core.Vertx;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 
 // 频道管理
 public class ChannelManager {
     public final String tmpChannelPrefix = "tmp";
     private Store store;
+    private final  YutakStore yutakStore;
     private final ConcurrentHashMap<String, CommonChannel> channels;
     private final ConcurrentHashMap<String,CommonChannel> tmpChannels;
     private final ConcurrentHashMap<String, CommonChannel> dataChannels;
@@ -21,6 +26,7 @@ public class ChannelManager {
     private Options options;
     public final Vertx vertx;
     private static ChannelManager instance;
+    private Logger log = LoggerFactory.getLogger(ChannelManager.class);
     static {
         instance = new ChannelManager();
     }
@@ -32,6 +38,7 @@ public class ChannelManager {
         store = H2Store.get();
         options = Options.get();
         vertx = YutakNetServer.get().vertx;
+        yutakStore = YutakStore.get();
     }
 
     public static ChannelManager get() {
@@ -53,7 +60,7 @@ public class ChannelManager {
         return getChannelFromCacheOrStore(id,type);
     }
     //TODO 这里肯定是需要优化的，如果全部放在内存里，假设1000人，每人200个好友，就有2 0000 条数据，这是不能接受的，可以使用lRU算法优化
-    public CommonChannel getPersonChannel(String fakeChannelID) {
+    private CommonChannel getPersonChannel(String fakeChannelID) {
         // in memory
         CommonChannel c = personChannels.get(fakeChannelID);
         if(c != null) {
@@ -64,7 +71,7 @@ public class ChannelManager {
         c.id = fakeChannelID;
         c.type = CS.ChannelType.Person;
         // c = store.getPersonChannel(fakeChannelID);
-        personChannels.put(fakeChannelID, loadChannelData(c));
+//        personChannels.put(fakeChannelID, loadChannelData(c));
         return c;
     }
 
@@ -98,30 +105,31 @@ public class ChannelManager {
         channels.put(k,commonChannel);
         return commonChannel;
     }
-    public CommonChannel loadChannelData(CommonChannel c) {
-        // load subscribers
-        List<String> subscribers = store.getSubscribers(c.id, c.type);
-        if(subscribers != null && subscribers.size() > 0) {
-            subscribers.forEach(c::addSubscriber);
-        }
-        //load deniedList
-        List<String> deniedList = store.getDeniedList(c.id, c.type);
-        if(deniedList != null && deniedList.size() > 0) {
-            c.addBlockList(deniedList);
-        }
-        //load allowedList
-        List<String> allowedList = store.getAllowedList(c.id, c.type);
-        if(allowedList != null && allowedList.size() > 0) {
-            c.addWhiteList(allowedList);
-        }
-        //load channel info
-        ChannelInfo info = store.getChannel(c.id, c.type);
-        if(info != null) {
-//            c.ban = info.ban;
-//            c.large = info.large;
-//            c.disband = info.disband;
-        }
-        return c;
+    // this is the key api
+    public CompletableFuture<Void> loadChannelData(CommonChannel c) {
+        return CompletableFuture.runAsync(()->{
+            List<String> subscribers = yutakStore.getSubscribers(c.id, c.type);
+            if(subscribers != null) {
+                for (String subscriber : subscribers) {
+                    c.addSubscriber(subscriber);
+                }
+            }
+
+            List<String> denyList = yutakStore.getDenyList(c.id, c.type);
+            if(denyList != null) {
+                c.addBlockList(denyList);
+            }
+            List<String> allowList = yutakStore.getAllowList(c.id, c.type);
+            if (allowList != null) {
+                c.addBlockList(allowList);
+            }
+            ChannelInfo channel = yutakStore.getChannel(c.id, c.type);
+            if (channel != null) {
+                c.ban = channel.ban;
+                c.large = channel.large;
+                c.disband = channel.disband;
+            }
+        });
     }
     public void deleteChannelCache(String channelID,byte channelType) {
         String k = channelID+"-"+channelType;

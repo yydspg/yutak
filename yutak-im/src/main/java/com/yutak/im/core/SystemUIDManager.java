@@ -1,21 +1,26 @@
 package com.yutak.im.core;
 
-import com.yutak.im.store.H2Store;
-import com.yutak.im.store.Store;
+import com.yutak.im.store.YutakStore;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class SystemUIDManager {
-    private final ConcurrentHashMap<String, Boolean> uidMap;
-    private Store store;
+    private static final Logger log = LoggerFactory.getLogger(SystemUIDManager.class);
+    private final Map<String, Boolean> UIDMap;
+    private final YutakStore yutakStore;
     private final static SystemUIDManager instance ;
     static {
         instance = new SystemUIDManager();
     }
     private SystemUIDManager() {
-        this.uidMap = new ConcurrentHashMap<>();
-        store  = H2Store.get();
+        this.UIDMap = new ConcurrentHashMap<>();
+        yutakStore = YutakStore.get();
     }
     public static SystemUIDManager get() {
         return instance;
@@ -24,27 +29,44 @@ public class SystemUIDManager {
         if (uids == null || uids.isEmpty()) {
             return;
         }
-        // persistence
-        store.addSystemUIDs(uids);
+        Set<String> set = UIDMap.keySet();
+        List<String> newUids = new ArrayList<>(uids);
         for (String uid : uids) {
-            this.uidMap.put(uid, true);
+            if (!set.contains(uid)) {
+                UIDMap.put(uid, true);
+                newUids.add(uid);
+            }
         }
+        // persistence
+        yutakStore.addSystemUIDs(newUids);
     }
     public void loadSystemUIDs() {
-        List<String> uid = store.getSystemUIDs();
-        if (uid == null || uid.isEmpty()) {
-            return;
-        }
-        uid.forEach(t-> this.uidMap.put(t, true));
+        yutakStore.getSystemUIDs().whenComplete((r,e)->{
+            if(e != null) {
+                log.error("System UID load error", e);
+            }
+            if(r != null) {
+                r.forEach(t->{
+                    UIDMap.put(t,true);
+                });
+            }
+        });
     }
     public void removeSystemUIDs(List<String> uids) {
         if (uids == null || uids.isEmpty()) {
             return;
         }
-        store.removeSystemUIDs(uids);
-        uids.forEach(this.uidMap::remove);
+        Set<String> set = UIDMap.keySet();
+        List<String> newUids = new ArrayList<>(uids);
+        for (String uid : uids) {
+            if (set.contains(uid)) {
+                UIDMap.remove(uid);
+                newUids.remove(uid);
+            }
+        }
+        yutakStore.removeSystemUIDs(newUids);
     }
     public boolean isSystemUID(String uid) {
-        return uidMap.get(uid) != null;
+        return UIDMap.get(uid) != null;
     }
 }

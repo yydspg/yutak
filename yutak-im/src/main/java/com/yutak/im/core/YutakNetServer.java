@@ -2,12 +2,17 @@ package com.yutak.im.core;
 
 
 import com.yutak.im.store.Store;
+import com.yutak.im.store.YutakStore;
 import io.vertx.core.Vertx;
 import io.vertx.core.net.NetServer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -22,10 +27,12 @@ public class YutakNetServer {
     public LocalDateTime startTime ;
     public Map<String,Boolean> IPBlockList ;
     private Store store;
+    private final YutakStore yutakStore;
     private NetServer netServer;
     public Vertx vertx;
     public AtomicLong ID; ;
     private final static YutakNetServer yutakNetServer;
+    private final Logger log = LoggerFactory.getLogger(YutakNetServer.class);
     static {
         yutakNetServer = new YutakNetServer();
     }
@@ -37,6 +44,7 @@ public class YutakNetServer {
         startTime = LocalDateTime.now();
         vertx = Vertx.vertx();
         ID = new AtomicLong(0);
+        yutakStore = YutakStore.get();
     }
 
     public static YutakNetServer get() {
@@ -49,27 +57,50 @@ public class YutakNetServer {
         public AtomicLong slowClients;
     }
 
-    public void addBlockIp(String ip) {
-        IPBlockList.put(ip, true);
+    public void addBlockIp(List<String> ip) {
+        if(ip == null || ip.isEmpty()) {
+            return;
+        }
+        Set<String> set = IPBlockList.keySet();
+        List<String> realIPs = new ArrayList<>();
+        ip.forEach(t->{
+            if(!set.contains(t)) {
+                realIPs.add(t);
+                IPBlockList.put(t, true);
+            }
+        });
+        yutakStore.addIPBlockList(realIPs);
     }
-    public void removeBlockIp(String ip) {
-        IPBlockList.put(ip, false);
+    public void removeBlockIp(List<String> ips) {
+        if(ips == null || ips.isEmpty()) {
+            return;
+        }
+        Set<String> set = IPBlockList.keySet();
+        List<String> realIPs = new ArrayList<>();
+        ips.forEach(t->{
+            if(set.contains(t)) {
+                realIPs.add(t);
+                IPBlockList.remove(t);
+            }
+        });
+        yutakStore.removeIPBlockList(realIPs);
     }
     public void initIpBlockList(){
-        List<String> blockList = store.getIpBlockList();
-        if(blockList == null) return;
-        for(String ip : blockList){
-            IPBlockList.put(ip, true);
-        }
+        yutakStore.getIPBlockList().whenComplete((r,e)->{
+            if(e != null) {
+                log.error("get Ip blockList error"+e.getMessage());
+                return;
+            }
+            if(r != null) {
+                r.forEach(t->{
+                    IPBlockList.put(t,true);
+                });
+            }
+        });
     }
     public void removeIpBlockList(){
         IPBlockList.clear();
     }
 
-    public void start(){
 
-    }
-    public void stop(){
-
-    }
 }

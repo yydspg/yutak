@@ -2,31 +2,28 @@ package com.yutak.im.handler;
 
 import com.yutak.im.core.*;
 import com.yutak.im.domain.Channel;
+import com.yutak.im.domain.CommonChannel;
 import com.yutak.im.domain.Conn;
-import com.yutak.im.domain.Message;
-import com.yutak.im.domain.PersonChannel;
 import com.yutak.im.kit.BufferKit;
 import com.yutak.im.kit.SecurityKit;
 import com.yutak.im.kit.SocketKit;
 import com.yutak.im.proto.*;
 import com.yutak.im.store.ChannelInfo;
+import com.yutak.im.store.YutakStore;
 import com.yutak.im.store.H2Store;
 import com.yutak.im.store.Store;
 import com.yutak.vertx.kit.StringKit;
-import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.net.NetSocket;
-import io.vertx.ext.auth.PRNG;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicLong;
 
 public class PacketProcessor {
     private ConnectManager connectManager;
@@ -37,6 +34,7 @@ public class PacketProcessor {
     private final YutakNetServer yutakNetServer;
     private final DeliveryManager deliveryManager;
     private Vertx vertx;
+    private final YutakStore yutakStore;
     byte[] types = {CS.FrameType.PING,CS.FrameType.SEND,CS.FrameType.RECVACK, (byte) CS.FrameType.SUB};
     private PacketProcessor() {
         yutakNetServer = YutakNetServer.get();
@@ -47,6 +45,7 @@ public class PacketProcessor {
         options = Options.get();
         store = H2Store.get();
         deliveryManager = DeliveryManager.get();
+        yutakStore = YutakStore.get();
     }
 
     private final static PacketProcessor instance ;
@@ -139,8 +138,9 @@ public class PacketProcessor {
                             promise.fail("token is empty");
                             return;
                         }
-                        // TODO  :  构建一个本地的数据库，目前的打算是 h2 使用，用内存模式，以后学习下，现在先把业务写完
+
                         String userToken = store.getUserToken(connectPacket.UID, connectPacket.deviceFlag);
+
                         byte level = store.getUserDeviceLevel(connectPacket.UID, connectPacket.deviceFlag);
                         if (StringKit.same(userToken, connectPacket.token)) {
 //                                    log.error("token not same");
@@ -152,7 +152,6 @@ public class PacketProcessor {
                         deviceLevel = CS.Device.Level.slave;
                     }
                     // check user status
-                    //todo
                     ChannelInfo channel = store.getChannel(connectPacket.UID, CS.ChannelType.Person);
 
                     if (channel == null) {
@@ -264,12 +263,18 @@ public class PacketProcessor {
 //                        deliveryManager.dataOut(conn,r.result());
 //                    });
             channelSendPacketMap.forEach((k, v) -> {
-                vertx.executeBlocking(p -> {
-                            p.complete(channelManager.getChannel(v.get(0).channelID, v.get(1).channelType));
-                        })
-                        .onSuccess(r -> {
-                            processChannel(conn,(Channel) r).handle(v);
-                        });
+//                vertx.executeBlocking(p -> {
+//                            p.complete(channelManager.getChannel(v.get(0).channelID, v.get(0).channelType));
+//                        })
+//                        .onSuccess(r -> {
+//                            processChannel(conn,r).handle(v);
+//                        });
+                CommonChannel channel = channelManager.getChannel(v.get(0).channelID, v.get(0).channelType);
+                if (channel != null) {
+                    processChannel(conn,channel).handle(v);
+                }else {
+
+                }
             });
     }
 
@@ -284,7 +289,7 @@ public class PacketProcessor {
 
     }
     // process same type packets
-    private Handler<List<SendPacket>> processChannel(Conn conn,Channel channel) {
+    private Handler<List<SendPacket>> processChannel(Conn conn,CommonChannel channel) {
         return packets-> {
             if (channel == null) {
                 deliveryManager.dataOut(conn,buildAck(CS.ReasonCode.ChannelNotExist, packets));

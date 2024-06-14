@@ -1,18 +1,16 @@
 package com.yutak.im.domain;
 
-import javax.sound.midi.Soundbank;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.locks.ReentrantLock;
 
 public class CommonChannel extends Channel {
     public String id;
     public byte type;
-    public boolean ban;
-    public boolean large;
-    public boolean disband;
+    // 0 means false ,1 means true
+    public byte ban;
+    public byte large;
+    public byte disband;
     private Map<String,Boolean> blockList;
     private Map<String,Boolean> whiteList;
     private Map<String,Boolean> subscribers;
@@ -43,7 +41,7 @@ public class CommonChannel extends Channel {
 
     @Override
     public boolean baned() {
-        return ban;
+        return ban == 1;
     }
 
     @Override

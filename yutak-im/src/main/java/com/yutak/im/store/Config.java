@@ -1,5 +1,7 @@
 package com.yutak.im.store;
 
+import java.nio.charset.StandardCharsets;
+
 public class Config {
     public static String logDir ;
     public static int slotNum;
@@ -16,8 +18,9 @@ public class Config {
     public static String notifyQueuePrefix;
     public static String userSeqPrefix;
     public static String nodeInFlightDataPrefix;
-    public static String systemUIDsKey;
-    public static String ipBlacklistKey;
+    public static byte[] systemUIDsKey;
+    public static byte[] ipBlacklistKey;
+    public static boolean isFirstStart;
     // must remember use this constructor
     static {
         slotNum = 2;
@@ -33,8 +36,9 @@ public class Config {
         notifyQueuePrefix = "notifyQueue";
         userSeqPrefix = "userSeq";
         nodeInFlightDataPrefix = "nodeInFlightData";
-        systemUIDsKey = "systemUIDs";
-        ipBlacklistKey = "ipBlacklist";
+        systemUIDsKey = "systemUIDs".getBytes(StandardCharsets.UTF_8);
+        ipBlacklistKey = "ipBlacklist".getBytes(StandardCharsets.UTF_8);
+        isFirstStart = false;
     }
 
 }
