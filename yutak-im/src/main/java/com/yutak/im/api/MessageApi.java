@@ -28,11 +28,11 @@ import java.util.List;
 public class MessageApi {
     private final DeliveryManager deliveryManager;
     private final ChannelManager channelManager;
-    private final Store store;
+//    private final Store store;
     public MessageApi() {
         channelManager = ChannelManager.get();
         deliveryManager = DeliveryManager.get();
-        store = H2Store.get();
+//        store = H2Store.get();
     }
 
     // send message
@@ -59,14 +59,7 @@ public class MessageApi {
                 clientMsgNo = UUIDKit.get();
             }
             // send message
-            Future.future(sendMsgToChannel(channelID, channelType, s, clientMsgNo, CS.Stream.ing))
-                    .onComplete(t->{
-                        if(t.succeeded()) {
-                            ResKit.JSON(ctx,200,t.result());
-                        } else {
-                            ResKit.error(ctx,t.cause().getMessage());
-                        }
-                    });
+
         };
     }
     // send batch message
@@ -89,28 +82,28 @@ public class MessageApi {
                 ResKit.error(ctx,"no invalid data info");
                 return;
             }
-            int readIndex = store.getMessageOfUserCursor(s.uid);
-            int startIndex = s.messageSeq;
-            if(startIndex <= 0) {
-                startIndex = readIndex;
-            } else if (startIndex < readIndex) {
-                startIndex = readIndex;
-            } else startIndex = readIndex;
+//            int readIndex = store.getMessageOfUserCursor(s.uid);
+//            int startIndex = s.messageSeq;
+//            if(startIndex <= 0) {
+//                startIndex = readIndex;
+//            } else if (startIndex < readIndex) {
+//                startIndex = readIndex;
+//            } else startIndex = readIndex;
 
-            startIndex ++;
-            List<Message> messages = store.syncMessageOfUser(s.uid, startIndex, s.limit);
+//            startIndex ++;
+//            List<Message> messages = store.syncMessageOfUser(s.uid, startIndex, s.limit);
 //            if (messages == null || messages.isEmpty()) {
 //                ResKit.error(ctx,"no messages found");
 //                return;
 //            }
             // response
             ArrayList<Res.Msg> msgs = new ArrayList<>();
-            if(messages != null && messages.size() > 0) {
-                messages.forEach(m -> {
-                    Res.Msg msg = new Res.Msg();
-                    msgs.add(msg.build(m));
-                });
-            }
+//            if(messages != null && messages.size() > 0) {
+//                messages.forEach(m -> {
+//                    Res.Msg msg = new Res.Msg();
+//                    msgs.add(msg.build(m));
+//                });
+//            }
             ResKit.JSON(ctx,200, Json.encode(msgs));
         };
     }
@@ -127,7 +120,7 @@ public class MessageApi {
                 ResKit.error(ctx,"uid is empty");
                 return;
             }
-            store.updateMessageOfUserCursorNeed(s.uid,s.lastMessageSeq);
+//            store.updateMessageOfUserCursorNeed(s.uid,s.lastMessageSeq);
             ResKit.success(ctx);
         };
     }
@@ -160,27 +153,6 @@ public class MessageApi {
             m.channelType = s.channelType;
 //            ResKit.success(ctx);
 
-            Future.future(sendMsgToChannel(m.channelID,m.channelType,m,clientMsgNo,CS.Stream.ing))
-                    .onComplete(t->{
-                        if(t.succeeded()) {
-                            if (t.result() != null) {
-                                Stream.Meta meta = new Stream.Meta();
-                                meta.channelID = s.channelID;
-                                meta.streamNo = streamNo;
-                                meta.streamFlag = streamType;
-                                meta.channelType = s.channelType;
-                                meta.messageID = t.result().getLong("messageID");
-                                meta.messageSeq = t.result().getInteger("messageSeq");
-                                store.saveStreamMeta(meta);
-//                                ResKit.JSON(ctx,200,t.result());
-                                ResKit.success(ctx,t.result());
-                            } else {
-                                ResKit.error(ctx,"no invalid data info");
-                            }
-                        }else {
-                            ResKit.error(ctx,t.cause().getMessage());
-                        }
-                    });
         };
     }
     // stream send msg end
@@ -192,13 +164,13 @@ public class MessageApi {
                 ResKit.error(ctx,"no invalid data info");
                 return;
             }
-            Stream.Meta streamMeta = store.getStreamMeta(s.channelId, s.channelType, s.streamNo);
-            if(streamMeta == null) {
-                ResKit.error(ctx,"no invalid stream info");
-                return;
-            }
-            streamMeta.streamFlag = CS.Stream.end;
-            store.saveStreamMeta(streamMeta);
+//            Stream.Meta streamMeta = store.getStreamMeta(s.channelId, s.channelType, s.streamNo);
+//            if(streamMeta == null) {
+//                ResKit.error(ctx,"no invalid stream info");
+//                return;
+//            }
+//            streamMeta.streamFlag = CS.Stream.end;
+//            store.saveStreamMeta(streamMeta);
             ResKit.success(ctx);
         };
     }
@@ -223,10 +195,10 @@ public class MessageApi {
             ArrayList<Message> messages = new ArrayList<>();
             // TODO  : 消息存储问题，这里是否需要redis优化
             q.seqs.forEach(s->{
-                Message msg = store.loadMessage(q.channelId, q.channelType, s);
-                if(msg != null) {
-                    messages.add(msg);
-                }
+//                Message msg = store.loadMessage(q.channelId, q.channelType, s);
+//                if(msg != null) {
+//                    messages.add(msg);
+//                }
             });
             ArrayList<Res.Msg> msgs = new ArrayList<>();
             if (messages.size() > 0) {
@@ -240,73 +212,5 @@ public class MessageApi {
         };
     }
     //  no blocking code
-    // TODO  :  try  to make this no blocking
-    private Handler<Promise<JsonObject>> sendMsgToChannel(String channelID, byte channelType, Req.SendMessage sendReq, String clientMsgNo, int streamFlag) {
-
-        // TODO  :  monitor
-        return promise -> {
-
-            String fakeChannelID = channelID;
-            CommonChannel channel = null;
-            // person type
-            if (channelType == CS.ChannelType.Person && sendReq.fromUID != null && !sendReq.fromUID.isEmpty()) {
-                fakeChannelID = sendReq.fromUID + "@" + channelID;
-            }
-
-            channel = channelManager.getChannel(fakeChannelID, channelType);
-            if (channel == null) {
-                promise.fail("channel not found");
-                return ;
-            }
-            if (channel.large == 1 && sendReq.header.syncOnce && !sendReq.header.noPersist) {
-                // not support
-                promise.fail("not support sync once in large channel");
-                return;
-            }
-            // distinct
-            List<String> subscribers = sendReq.subscribers.stream().distinct().toList();
-
-            // TODO  :  stream
-
-            Message message = new Message();
-            message.recvPacket = new RecvPacket();
-
-            message.recvPacket.redDot = sendReq.header.redDot;
-            message.recvPacket.syncOnce = sendReq.header.syncOnce;
-            message.recvPacket.noPersist = sendReq.header.noPersist;
-            message.recvPacket.setting = 0;
-            message.recvPacket.messageID = YutakNetServer.get().ID.getAndIncrement();
-            message.recvPacket.channelID = channelID;
-            message.recvPacket.channelType = channelType;
-            message.recvPacket.expire = sendReq.expire;
-            message.recvPacket.fromUID = sendReq.fromUID;
-            message.recvPacket.timestamp = (int) System.currentTimeMillis();
-            message.recvPacket.payload = sendReq.payload;
-            message.recvPacket.clientMsgNo = clientMsgNo;
-
-            message.subscribers = subscribers;
-            message.fromDeviceFlag = CS.Device.Flag.sys;
-
-            // persistence
-
-            if(!sendReq.header.noPersist && !sendReq.header.syncOnce && !channelManager.isTmpChannel(channelID)) {
-                if (message.recvPacket.streamFlag == CS.Stream.ing) {
-
-                } else {
-                    store.appendMessage(channelID,channelType,List.of(message));
-                }
-            }
-            // TODO  :  webhook
-
-            // start put message into channel
-            deliveryManager.routeMsg(List.of(message),subscribers,null,sendReq.fromUID,"system",CS.Device.Level.master);
-
-            JsonObject e = new JsonObject();
-            e.put("message_id",fakeChannelID);
-            e.put("clientMsgNo", clientMsgNo);
-            e.put("messageSeq",message.recvPacket.messageSeq);
-            promise.complete(e);
-        };
-    }
 }
 

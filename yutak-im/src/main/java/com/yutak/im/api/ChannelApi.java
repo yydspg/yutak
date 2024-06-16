@@ -5,8 +5,7 @@ import com.yutak.im.domain.CommonChannel;
 import com.yutak.im.domain.Req;
 import com.yutak.im.proto.CS;
 import com.yutak.im.store.ChannelInfo;
-import com.yutak.im.store.H2Store;
-import com.yutak.im.store.Store;
+import com.yutak.im.store.YutakStore;
 import com.yutak.vertx.anno.RouteHandler;
 import com.yutak.vertx.anno.RouteMapping;
 import com.yutak.vertx.core.HttpMethod;
@@ -14,8 +13,11 @@ import com.yutak.vertx.kit.ReqKit;
 import com.yutak.vertx.kit.ResKit;
 import io.vertx.core.Handler;
 import io.vertx.core.json.Json;
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -23,12 +25,12 @@ import java.util.List;
 
 @RouteHandler("/channel")
 public class ChannelApi {
+    private static final Logger log = LoggerFactory.getLogger(ChannelApi.class);
     private ChannelManager channelManager;
-    private Store store;
-
+    private YutakStore yutakStore;
     public ChannelApi() {
         channelManager = ChannelManager.get();
-        store = H2Store.get();
+        yutakStore = YutakStore.get();
     }
     @RouteMapping(path = "/create",method = HttpMethod.POST,block = true)
     public Handler<RoutingContext> create() {
@@ -47,12 +49,15 @@ public class ChannelApi {
                 return;
             }
             // add
-            store.addOrUpdateChannel(c.channelInfo);
+//            store.addOrUpdateChannel(c.channelInfo);
+            yutakStore.addOrUpdateChannel(c.channelInfo);
             // if update channel ,need all subscribers
-            store.removeAllSubscribers(c.channelInfo.channelId,c.channelInfo.channelType);
+//            store.removeAllSubscribers(c.channelInfo.channelId,c.channelInfo.channelType);
+            yutakStore.removeAllSubscribers(c.channelInfo.channelId,c.channelInfo.channelType);
             // add subscribers
             if(c.subscribers != null && !c.subscribers.isEmpty()) {
-                store.addSubscribers(c.channelInfo.channelId,c.channelInfo.channelType,c.subscribers);
+//                store.addSubscribers(c.channelInfo.channelId,c.channelInfo.channelType,c.subscribers);
+                yutakStore.addSubscribers(c.channelInfo.channelId,c.channelInfo.channelType,c.subscribers);
             }
             channelManager.deleteChannelCache(c.channelInfo.channelId,c.channelInfo.channelType);
             ResKit.success(ctx);
@@ -67,15 +72,23 @@ public class ChannelApi {
                 ResKit.error(ctx,"no  data info");
                 return ;
             }
-            store.addOrUpdateChannel(c);
+//            store.addOrUpdateChannel(c);
+            yutakStore.addOrUpdateChannel(c);
             // update info
-            if(c.channelType == CS.ChannelType.Group) {
-                CommonChannel channel = channelManager.getChannel(c.channelId, c.channelType);
-//                channel.large = c.large;
-//                channel.ban = c.ban;
-//                channel.disband = c.disband;
-            }
-            ResKit.success(ctx,c);
+            channelManager.getChannelAsync(c.channelId, c.channelType).whenComplete((channel, err) -> {
+                if(err != null) {
+                    log.error("get channel error:{}", err.getMessage());
+                    return;
+                }
+                if(channel == null) {
+                    ResKit.error(ctx,"channel is null");
+                    return;
+                }
+                channel.large = c.large;
+                channel.ban = c.ban;
+                channel.disband = c.disband;
+                ResKit.success(ctx,channel);
+            });
         };
     }
     @RouteMapping(path = "/delete",method = HttpMethod.POST,block = true)
@@ -98,14 +111,17 @@ public class ChannelApi {
                 return;
             }
             // persistence
-            ChannelInfo info = store.getChannel(channelId, channelType);
+//            ChannelInfo info = store.getChannel(channelId, channelType);
+            ChannelInfo info = yutakStore.getChannel(channelId, channelType);
             if(info == null) {
                 ResKit.success(ctx);
                 return;
             }
             info.ban = 1;
-            store.addOrUpdateChannel(info);
-            store.removeAllSubscribers(channelId, channelType);
+//            store.addOrUpdateChannel(info);
+//            store.removeAllSubscribers(channelId, channelType);
+            yutakStore.addOrUpdateChannel(info);
+            yutakStore.removeAllSubscribers(channelId, channelType);
             // sync cache
             channelManager.deleteChannelCache(channelId,channelType);
             ResKit.success(ctx);
@@ -130,29 +146,36 @@ public class ChannelApi {
             // default type is group
             if(a.channelType == 0) {a.channelType = CS.ChannelType.Group;}
 
-            CommonChannel channel = channelManager.getChannel(a.channelId, a.channelType);
-            if(channel == null) {
-                ResKit.error(ctx,"channel is null");
-                return;
-            }
-            // add tmp subscribers
-            if(a.temp == 1) {
-                if(a.reset == 1) channel.removeAllTmpSubscriber();
-                channel.addTmpSubscriber(a.subscribers);
-            } else {
-            // add real subscribers
-                if(a.reset == 1) {
-                    channel.removeAllSubscriber();
-                    store.removeAllSubscribers(a.channelId,a.channelType);
-                }
-                ArrayList<String> newSubscribers = new ArrayList<>();
-                // build new subscribers
-                a.subscribers.forEach(s -> {
-                    if(channel.addSubscriber(s)) newSubscribers.add(s);
-                });
-                store.addSubscribers(a.channelId,a.channelType,newSubscribers);
-            }
-            ResKit.success(ctx);
+             channelManager.getChannelAsync(a.channelId, a.channelType).whenComplete((channel,e)->{
+                 if(e != null) {
+                     ResKit.error(ctx,"get channel error");
+                     return;
+                 }
+                 if(channel == null) {
+                     ResKit.error(ctx,"channel is null");
+                     return;
+                 }
+                 // add tmp subscribers
+                 if(a.temp == 1) {
+                     if(a.reset == 1) channel.removeAllTmpSubscriber();
+                     channel.addTmpSubscriber(a.subscribers);
+                 } else {
+                     // add real subscribers
+                     if (a.reset == 1) {
+                         channel.removeAllSubscriber();
+//                    store.removeAllSubscribers(a.channelId,a.channelType);
+                         yutakStore.removeAllSubscribers(a.channelId, a.channelType);
+                     }
+                     ArrayList<String> newSubscribers = new ArrayList<>();
+                     // build new subscribers
+                     a.subscribers.forEach(s -> {
+                         if (channel.addSubscriber(s)) newSubscribers.add(s);
+                     });
+//                store.addSubscribers(a.channelId,a.channelType,newSubscribers);
+                    yutakStore.addSubscribers(a.channelId, a.channelType, newSubscribers);
+                 }
+                 ResKit.success(ctx);
+             });
         };
     }
     @RouteMapping(path = "/subscriber/del",method = HttpMethod.POST,block = true)
@@ -167,19 +190,24 @@ public class ChannelApi {
                 ResKit.error(ctx,"channelId is null");
                 return;
             }
-            CommonChannel channel = channelManager.getChannel(r.channelId, r.channelType);
-            if(channel == null) {
-                ResKit.error(ctx,"channel is null");
-                return;
-            }
-            if(r.temp == 1) {
-                channel.removeAllTmpSubscriber();
-            } else {
-                store.removeSubscribers(r.channelId,r.channelType,r.subscribers);
-                channel.removeSubscribers(r.subscribers);
-                // TODO  :  current conversation need to be deleted
-            }
-            ResKit.success(ctx);
+            channelManager.getChannelAsync(r.channelId, r.channelType).whenComplete((channel,e)->{
+                if(e != null) {
+                    ResKit.error(ctx,"get channel error");
+                    return;
+                }
+                if(channel == null) {
+                    ResKit.error(ctx,"channel is null");
+                    return;
+                }
+                if(r.temp == 1) {
+                    channel.removeAllTmpSubscriber();
+                } else {
+                    yutakStore.removeSubscribers(r.channelId,r.channelType,r.subscribers);
+                    channel.removeSubscribers(r.subscribers);
+                    // TODO  :  current conversation need to be deleted
+                }
+                ResKit.success(ctx);
+            });
         };
     }
     @RouteMapping(path = "/block/add",method = HttpMethod.POST,block = true)
@@ -198,14 +226,19 @@ public class ChannelApi {
                 ResKit.error(ctx,"uids is null");
                 return;
             }
-            CommonChannel channel = channelManager.getChannel(b.channelId, b.channelType);
-            if(channel == null) {
-                ResKit.error(ctx,"channel is null");
-                return;
-            }
-            store.addDeniedList(b.channelId,b.channelType,b.uids);
-            channel.addBlockList(b.uids);
-            ResKit.success(ctx);
+            channelManager.getChannelAsync(b.channelId, b.channelType).whenComplete((channel,e)->{
+                if(e != null) {
+                    ResKit.error(ctx,"get channel error");
+                    return;
+                }
+                if(channel == null) {
+                    ResKit.error(ctx,"channel is null");
+                    return;
+                }
+                yutakStore.addDenyList(b.channelId,b.channelType,b.uids);
+                channel.addBlockList(b.uids);
+                ResKit.success(ctx);
+            });
         };
     }
     @RouteMapping(path = "/block/set",method = HttpMethod.POST,block = true)
@@ -224,15 +257,21 @@ public class ChannelApi {
                 ResKit.error(ctx,"uids is null");
                 return;
             }
-            CommonChannel channel = channelManager.getChannel(b.channelId, b.channelType);
-            if(channel == null) {
-                ResKit.error(ctx,"channel is null");
-                return;
-            }
-            store.removeDeniedList(b.channelId,b.channelType,b.uids);
-            store.addDeniedList(b.channelId,b.channelType,b.uids);
-            channel.addBlockList(b.uids);
-            ResKit.success(ctx);
+            channelManager.getChannelAsync(b.channelId, b.channelType).whenComplete((channel,e)-> {
+                if (e != null ){
+                    ResKit.error(ctx,"get channel error");
+                    return;
+                }
+                if (channel == null) {
+                    ResKit.error(ctx, "channel is null");
+                    return;
+                }
+                yutakStore.removeAllDenyList(b.channelId, b.channelType);
+                yutakStore.addDenyList(b.channelId, b.channelType, b.uids);
+                channel.removeAllBlockList();
+                channel.addBlockList(b.uids);
+                ResKit.success(ctx);
+            });
         };
     }
     @RouteMapping(path = "/block/remove",method = HttpMethod.POST)
@@ -256,7 +295,7 @@ public class ChannelApi {
                 ResKit.error(ctx,"channel is null");
                 return;
             }
-            store.removeDeniedList(b.channelId,b.channelType,b.uids);
+            yutakStore.removeDenyList(b.channelId,b.channelType,b.uids);
             channel.removeBlockList(b.uids);
             ResKit.success(ctx);
         };
@@ -277,14 +316,18 @@ public class ChannelApi {
                 ResKit.error(ctx,"uids is null");
                 return;
             }
-            CommonChannel channel = channelManager.getChannel(w.channelId, w.channelType);
-            if(channel == null) {
-                ResKit.error(ctx,"channel is null");
-                return;
-            }
-            store.addAllowedList(w.channelId, w.channelType,w.uids);
-            channel.addWhiteList(w.uids);
-            ResKit.success(ctx);
+            channelManager.getChannelAsync(w.channelId, w.channelType).whenComplete((channel,e)->{
+                if (e != null ){
+                    ResKit.error(ctx,"get channel error");
+                }
+                if(channel == null) {
+                    ResKit.error(ctx,"channel is null");
+                    return;
+                }
+                yutakStore.addAllowList(w.channelId, w.channelType,w.uids);
+                channel.addWhiteList(w.uids);
+                ResKit.success(ctx);
+            });
         };
     }
     @RouteMapping(path = "/white/remove",method = HttpMethod.POST)
@@ -303,14 +346,19 @@ public class ChannelApi {
                 ResKit.error(ctx,"uids is null");
                 return;
             }
-            CommonChannel channel = channelManager.getChannel(w.channelId, w.channelType);
-            if(channel == null) {
-                ResKit.error(ctx,"channel is null");
-                return;
-            }
-            store.removeAllowedList(w.channelId, w.channelType,w.uids);
-            channel.removeWhiteList(w.uids);
-            ResKit.success(ctx);
+            channelManager.getChannelAsync(w.channelId, w.channelType).whenComplete((channel,e)-> {
+                if (e != null) {
+                    ResKit.error(ctx,"get channel error");
+                    return;
+                }
+                if (channel == null) {
+                    ResKit.error(ctx, "channel is null");
+                    return;
+                }
+                yutakStore.removeAllowList(w.channelId, w.channelType, w.uids);
+                channel.removeWhiteList(w.uids);
+                ResKit.success(ctx);
+            });
         };
     }
     @RouteMapping(path = "/white/set",method = HttpMethod.POST)
@@ -329,15 +377,21 @@ public class ChannelApi {
                 ResKit.error(ctx,"uids is null");
                 return;
             }
-            CommonChannel channel = channelManager.getChannel(w.channelId, w.channelType);
-            if(channel == null) {
-                ResKit.error(ctx,"channel is null");
-                return;
-            }
-            store.removeAllowedList(w.channelId, w.channelType,w.uids);
-            store.addAllowedList(w.channelId, w.channelType,w.uids);
-            channel.addWhiteList(w.uids);
-            ResKit.success(ctx);
+            channelManager.getChannelAsync(w.channelId, w.channelType).whenComplete((channel,e)-> {
+                if (e != null) {
+                    ResKit.error(ctx,"get channel error");
+                    return;
+                }
+                if (channel == null) {
+                    ResKit.error(ctx, "channel is null");
+                    return;
+                }
+                yutakStore.removeAllAllowList(w.channelId, w.channelType);
+                yutakStore.addAllowList(w.channelId, w.channelType, w.uids);
+                channel.removeAllWhiteList();
+                channel.addWhiteList(w.uids);
+                ResKit.success(ctx);
+            });
         };
     }
     @RouteMapping(path = "/white/list",method = HttpMethod.GET)
@@ -348,21 +402,24 @@ public class ChannelApi {
                 ResKit.error(ctx,"channelId is null");
                 return;
             }
-            CommonChannel channel = channelManager.getChannel(channelId, CS.ChannelType.Group);
-            if(channel == null) {
-                ResKit.error(ctx,"channel is null");
-                return;
-            }
-            List<String> whiteList = channel.getWhiteList();
-            if(whiteList == null || whiteList.isEmpty()) {
-                ResKit.error(ctx,"whiteList is null");
-                return;
-            }
-            JsonObject res = new JsonObject();
-            for (String s : whiteList) {
-                res.put(s,true);
-            }
-            ResKit.JSON(ctx,200,res);
+            channelManager.getChannelAsync(channelId, CS.ChannelType.Group).whenComplete((channel,e)->{
+                if (e != null) {
+                    ResKit.error(ctx,"get channel error");
+                    return;
+                }
+                if (channel == null) {
+                    ResKit.error(ctx, "channel is null");
+                    return;
+                }
+                List<String> whiteList = channel.getWhiteList();
+                if(whiteList == null || whiteList.isEmpty()) {
+                    ResKit.error(ctx,"whiteList is null");
+                    return;
+                }
+                JsonArray o = new JsonArray();
+                whiteList.forEach(o::add);
+                ResKit.JSON(ctx,200,o);
+            });
         };
     }
     @RouteMapping(path = "/syncMessage",method = HttpMethod.POST)

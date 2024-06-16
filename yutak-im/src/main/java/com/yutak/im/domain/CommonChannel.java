@@ -31,9 +31,7 @@ public class CommonChannel extends Channel {
        return true;
     }
     public void addBlockList(List<String> list) {
-        for (String s : list) {
-            blockList.put(s, true);
-        }
+        list.forEach(s -> blockList.put(s, true));
     }
     public void addWhiteList(List<String> list) {
         list.forEach(s -> whiteList.put(s, true));
@@ -70,12 +68,20 @@ public class CommonChannel extends Channel {
     public void removeWhiteList(List<String> list) {
         list.forEach(t->{whiteList.remove(t);});
     }
-
+    public void removeAllBlockList() {
+        blockList.clear();
+    }
+    public void removeAllWhiteList() {
+        whiteList.clear();
+    }
     public List<String> getTmpSubscribers() {
         return tmpSubscribers.keySet().stream().toList();
     }
     public List<String> getWhiteList() {
         return whiteList.keySet().stream().toList();
+    }
+    public List<String> getBlockList() {
+        return blockList.keySet().stream().toList();
     }
     public static void main(String[] args) {
         ConcurrentHashMap<String, Object> map = new ConcurrentHashMap<>();

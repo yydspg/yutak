@@ -77,7 +77,7 @@ public class H2Store implements Store {
         sql.add("select uid from (?)");
 
     }
-    public static H2Store get() {return h2Store;}
+//    public static H2Store get() {return h2Store;}
     @SneakyThrows
     public PreparedStatement get(String sql) {
         return hikariDataSource.getConnection().prepareStatement(sql);

@@ -46,9 +46,6 @@ public class YutakNetBuilder {
                 s.end();
                 return;
             }
-            // statistics data inbound
-//            s.handler(processor.statistics());
-            // dispatch
             s.handler(processor.pipe(s));
         };
     }

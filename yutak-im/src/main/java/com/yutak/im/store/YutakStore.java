@@ -25,6 +25,7 @@ public class YutakStore {
     private final ReadOptions rOps;
     private final static YutakStore yutakStore;
     static {
+        // build local Store
         yutakStore = new YutakStore();
     }
 
@@ -73,8 +74,6 @@ public class YutakStore {
                 // ColumnFamilyHandler will be filled data after RocksDB opened
                 List<ColumnFamilyHandle> handles = new ArrayList<>();
                 for (byte[] b : bytes) {
-                    String s = new String(b, StandardCharsets.UTF_8);
-                    System.out.println(s);
                     ColumnFamilyDescriptor c = new ColumnFamilyDescriptor(b);
                     descriptors.add(c);
                 }
@@ -89,11 +88,12 @@ public class YutakStore {
                 for (ColumnFamilyHandle handle : handles) {
                     // add  default column family
                     if (handle.getName().length > 4){
-                        slotHandles.add(Config.slotNum,handle);
+//                        slotHandles.add(Config.slotNum,handle);
                         continue;
                     }
                     slotHandles.add(Integer.parseInt(new String(handle.getName())), handle);
                 }
+                slotHandles.add(Config.slotNum,handles.get(0));
                 //
                 log.debug("yutak ==> Load file store successfully");
             }
@@ -141,7 +141,7 @@ public class YutakStore {
                 return null;
             }
             return Kit.decodeObj(v);
-        });
+        },executor);
     }
     public CompletableFuture<Void> updateUserToken(String uid,byte deviceFlag,byte deviceLevel,String token) {
         return CompletableFuture.runAsync(()->{
@@ -150,7 +150,7 @@ public class YutakStore {
             o.put("deviceLevel",deviceLevel);
             o.put("token",token);
             putKV(Kit.slotNum(uid),Kit.buildUserTokenKey(uid, deviceFlag),Kit.encode(o));
-        });
+        },executor);
     }
     public CompletableFuture<Void> addOrUpdateChannel(ChannelInfo channelInfo) {
         return CompletableFuture.runAsync(()->{
@@ -160,38 +160,38 @@ public class YutakStore {
             v[1] = channelInfo.large;
             v[2] = channelInfo.disband;
             putKV(Kit.slotNum(channelInfo.channelId),Kit.buildChannelKey(channelInfo.channelId, channelInfo.channelType),v);
-        });
+        },executor);
     }
     public CompletableFuture<Boolean> existsChannel(String channelID,byte channelType) {
         return CompletableFuture.supplyAsync(()->{
             if (channelID == null || channelID.length() == 0) return false;
             byte[] v = getV(Kit.slotNum(channelID), Kit.buildChannelKey(channelID, channelType));
             return v != null;
-        });
+        },executor);
     }
     public CompletableFuture<Void> removeChannel(String channelID,byte channelType) {
         return CompletableFuture.runAsync(()->{
             if (channelID == null || channelID.length() == 0) return;
             delK(Kit.slotNum(channelID), Kit.buildChannelKey(channelID, channelType));
-        });
+        },executor);
     }
     public CompletableFuture<Void> addSubscribers(String channelID,byte channelType,List<String> uids) {
         return CompletableFuture.runAsync(()->{
            if (channelID == null || channelID.length() == 0 || uids == null || uids.size() == 0) return;
             putList(Kit.slotNum(channelID),Kit.buildSubscribeKey(channelID,channelType),uids);
-        });
+        },executor);
     }
     public CompletableFuture<Void> removeSubscribers(String channelID,byte channelType,List<String> uids) {
             return CompletableFuture.runAsync(()->{
                 if (channelID == null || channelID.length() == 0 || uids == null || uids.size() == 0) return;
                 delList(Kit.slotNum(channelID),Kit.buildSubscribeKey(channelID, channelType),uids);
-            });
+            },executor);
     }
     public CompletableFuture<List<String>> getSubscribersAsync(String channelID,byte channelType) {
         return CompletableFuture.supplyAsync(()->{
             if (channelID == null || channelID.length() == 0) return null;
             return  getList(Kit.slotNum(channelID), Kit.buildSubscribeKey(channelID, channelType));
-        });
+        },executor);
     }
     public List<String> getSubscribers(String channelID,byte channelType) {
         if (channelID == null || channelID.length() == 0) return null;
@@ -201,13 +201,13 @@ public class YutakStore {
         return CompletableFuture.runAsync(()->{
             if (channelID == null || channelID.length() == 0) return;
             delK(Kit.slotNum(channelID), Kit.buildSubscribeKey(channelID, channelType));
-        });
+        },executor);
     }
     public CompletableFuture<List<String>> getAllowListAsync(String channelID,byte channelType) {
         return CompletableFuture.supplyAsync(()->{
             if (channelID == null || channelID.length() == 0) return null;
             return  getList(Kit.slotNum(channelID), Kit.buildAllowListKey(channelID, channelType));
-        });
+        },executor);
     }
     public List<String> getAllowList(String channelID,byte channelType) {
         if (channelID == null || channelID.length() == 0) return null;
@@ -217,25 +217,25 @@ public class YutakStore {
         return CompletableFuture.runAsync(()->{
             if (channelID == null || channelID.length() == 0 || uids == null || uids.size() == 0) return;
             putList(Kit.slotNum(channelID),Kit.buildAllowListKey(channelID,channelType),uids);
-        });
+        },executor);
     }
     public CompletableFuture<Void> removeAllowList(String channelID,byte channelType,List<String> uids) {
         return CompletableFuture.runAsync(()->{
             if (channelID == null || channelID.length() == 0 || uids == null || uids.size() == 0) return;
            delList(Kit.slotNum(channelID),Kit.buildAllowListKey(channelID, channelType),uids);
-        });
+        },executor);
     }
     public CompletableFuture<Void> removeAllAllowList(String channelID,byte channelType) {
         return CompletableFuture.runAsync(()->{
             if (channelID == null || channelID.length() == 0 ) return;
             delK(Kit.slotNum(channelID), Kit.buildAllowListKey(channelID, channelType));
-        });
+        },executor);
     }
     public CompletableFuture<List<String>> getDenyListAsync(String channelID,byte channelType) {
         return CompletableFuture.supplyAsync(()->{
             if (channelID == null || channelID.length() == 0) return null;
             return getList(Kit.slotNum(channelID), Kit.buildDenyListKey(channelID, channelType));
-        });
+        },executor);
     }
     public List<String> getDenyList(String channelID,byte channelType) {
         if (channelID == null || channelID.length() == 0) return null;
@@ -245,54 +245,50 @@ public class YutakStore {
         return CompletableFuture.runAsync(()->{
             if (channelID == null || channelID.length() == 0 || uids == null || uids.size() == 0) return;
             putList(Kit.slotNum(channelID),Kit.buildDenyListKey(channelID, channelType),uids);
-        });
+        },executor);
     }
     public CompletableFuture<Void> removeDenyList(String channelID,byte channelType,List<String> uids) {
         return CompletableFuture.runAsync(()->{
             if (channelID == null || channelID.length() == 0 || uids == null || uids.size() == 0) return;
             delList(Kit.slotNum(channelID), Kit.buildDenyListKey(channelID, channelType),uids);
-        });
+        },executor);
     }
     public CompletableFuture<Void> removeAllDenyList(String channelID,byte channelType) {
         return CompletableFuture.runAsync(()->{
             if (channelID == null || channelID.length() == 0) return;
             delK(Kit.slotNum(channelID), Kit.buildDenyListKey(channelID, channelType));
-        });
+        },executor);
     }
     public CompletableFuture<Void> addSystemUIDs(List<String> uids) {
         return CompletableFuture.runAsync(()->{
             if (uids == null || uids.size() == 0) return;
             // put into default columnFamily
             putList(Config.slotNum,Config.systemUIDsKey,uids);
-        });
+        },executor);
     }
     public CompletableFuture<Void> removeSystemUIDs(List<String> uids) {
         return CompletableFuture.runAsync(()->{
             if (uids == null || uids.size() == 0) return;
             delList(Config.slotNum,Config.systemUIDsKey,uids);
-        });
+        },executor);
     }
     public CompletableFuture<List<String>> getSystemUIDs() {
-        return CompletableFuture.supplyAsync(()->{
-            return getList(Config.slotNum,Config.systemUIDsKey);
-        });
+        return CompletableFuture.supplyAsync(()-> getList(Config.slotNum,Config.systemUIDsKey),executor);
     }
     public CompletableFuture<Void> addIPBlockList(List<String> ips) {
         return CompletableFuture.runAsync(()->{
             if (ips == null || ips.size() == 0) return;
             putList(Config.slotNum,Config.ipBlacklistKey,ips);
-        });
+        },executor);
     }
     public CompletableFuture<Void> removeIPBlockList(List<String> ips) {
         return CompletableFuture.runAsync(()->{
             if (ips == null || ips.size() == 0) return;
             delList(Config.slotNum,Config.ipBlacklistKey,ips);
-        });
+        },executor);
     }
     public CompletableFuture<List<String>> getIPBlockList() {
-        return CompletableFuture.supplyAsync(()->{
-            return getList(Config.slotNum,Config.ipBlacklistKey);
-        });
+        return CompletableFuture.supplyAsync(()-> getList(Config.slotNum,Config.ipBlacklistKey),executor);
     }
     private void delList(int slotNum,byte[] K,List<String> list) {
         byte[] v = getV(slotNum, K);
@@ -308,7 +304,12 @@ public class YutakStore {
     }
     private void putList(int slotNum,byte[] K,List<String> list) {
         byte[] v = getV(slotNum, K);
-        JsonArray o = Kit.decodeArray(v);
+        JsonArray o = null;
+        if (v == null || v.length == 0){
+            o = new JsonArray();
+        } else {
+            o = Kit.decodeArray(v);
+        }
         list.forEach(o::add);
         putKV(slotNum,K,Kit.encode(o));
     }

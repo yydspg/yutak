@@ -12,6 +12,7 @@ import com.yutak.im.proto.CS;
 import com.yutak.im.proto.DisConnectPacket;
 import com.yutak.im.store.H2Store;
 import com.yutak.im.store.Store;
+import com.yutak.im.store.YutakStore;
 import com.yutak.vertx.anno.RouteHandler;
 import com.yutak.vertx.anno.RouteMapping;
 import com.yutak.vertx.core.HttpMethod;
@@ -27,17 +28,18 @@ import java.util.List;
 
 @RouteHandler("/user")
 public class UserApi {
-    private Store store;
     private final ConnectManager connectManager;
     private final DeliveryManager deliveryManager;
     private final ChannelManager channelManager;
     private final SystemUIDManager systemUIDManager;
+    private final YutakStore yutakStore;
     public UserApi() {
-        store = H2Store.get();
+
         connectManager = ConnectManager.get();
         deliveryManager = DeliveryManager.get();
         channelManager = ChannelManager.get();
         systemUIDManager  = SystemUIDManager.get();
+        yutakStore = YutakStore.get();
     }
     // update user token
     @RouteMapping(path = "/token",method = HttpMethod.POST)
@@ -55,7 +57,7 @@ public class UserApi {
                 ResKit.error(ctx,"no channel");
                 return;
             }
-            store.updateUserToken(u.uid,u.token,u.deviceFlag,u.deviceLevel);
+            yutakStore.updateUserToken(u.uid,u.deviceFlag,u.deviceLevel, u.token);
 
             // remove old connections
             if (u.deviceLevel == CS.Device.Level.master) {
@@ -153,7 +155,7 @@ public class UserApi {
 
     private void quitUserService(String uid, byte deviceFlag) {
         // update user token
-        store.updateUserToken(uid,"",deviceFlag, CS.Device.Level.master);
+        yutakStore.updateUserToken(uid,deviceFlag, CS.Device.Level.master,"");
         List<Conn> connects = connectManager.getConnectWithDeviceFlag(uid, deviceFlag);
         if(connects != null) {
             for(Conn conn : connects) {

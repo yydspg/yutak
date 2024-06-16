@@ -40,6 +40,10 @@ public class SystemUIDManager {
         // persistence
         yutakStore.addSystemUIDs(newUids);
     }
+    public void destroy() {
+        UIDMap.clear();
+        log.info("yutak ==> SystemUIDManager destroy");
+    }
     public void loadSystemUIDs() {
         yutakStore.getSystemUIDs().whenComplete((r,e)->{
             if(e != null) {

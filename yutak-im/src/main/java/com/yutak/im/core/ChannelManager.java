@@ -11,41 +11,42 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.*;
 
 // 频道管理
 public class ChannelManager {
     public final String tmpChannelPrefix = "tmp";
-    private Store store;
     private final  YutakStore yutakStore;
-    private final ConcurrentHashMap<String, CommonChannel> channels;
     private final ConcurrentHashMap<String,CommonChannel> tmpChannels;
+    // if subscribers == 0 ,remove from dataChannels
     private final ConcurrentHashMap<String, CommonChannel> dataChannels;
-    private final ConcurrentHashMap<String, CommonChannel> personChannels;
-    private Options options;
-    public final Vertx vertx;
+    private final LRU<String,CommonChannel> channels;
+    private final LRU<String,CommonChannel> personChannels;
     private static ChannelManager instance;
+    private final ThreadPoolExecutor executor;
     private Logger log = LoggerFactory.getLogger(ChannelManager.class);
     static {
         instance = new ChannelManager();
     }
     private ChannelManager() {
-        this.channels = new ConcurrentHashMap<>();
+        this.channels = new LRU<>("Channel-LRU",10000);
         this.tmpChannels = new ConcurrentHashMap<>();
         this.dataChannels = new ConcurrentHashMap<>();
-        this.personChannels = new ConcurrentHashMap<>();
-        store = H2Store.get();
-        options = Options.get();
-        vertx = YutakNetServer.get().vertx;
+        this.personChannels = new LRU<>("Person-LRU",10000);
         yutakStore = YutakStore.get();
+        executor = new ThreadPoolExecutor(5,8,10, TimeUnit.SECONDS,new LinkedBlockingQueue<>());
     }
 
     public static ChannelManager get() {
         return instance;
     }
-    public void createOrUpdateChannel(CommonChannel channel) {
-
+    public void destroy(){
+        executor.shutdown();
+        personChannels.destroy();
+        channels.destroy();
+        tmpChannels.clear();
+        dataChannels.clear();
+        log.info("yutak ==> ChannelManager destroyed");
     }
     public CommonChannel getChannel(String id, byte type) {
         if(id.contains(tmpChannelPrefix)) {
@@ -57,92 +58,85 @@ public class ChannelManager {
         if(type == CS.ChannelType.Data) {
             return getOrCreateDataChannel(id,type);
         }
-        return getChannelFromCacheOrStore(id,type);
+        return getChannelFromCache(id,type);
     }
-    //TODO 这里肯定是需要优化的，如果全部放在内存里，假设1000人，每人200个好友，就有2 0000 条数据，这是不能接受的，可以使用lRU算法优化
     private CommonChannel getPersonChannel(String fakeChannelID) {
         // in memory
-        CommonChannel c = personChannels.get(fakeChannelID);
-        if(c != null) {
-            return c;
-        }
-        // need to load from store
-        c = new CommonChannel();
-        c.id = fakeChannelID;
-        c.type = CS.ChannelType.Person;
-        // c = store.getPersonChannel(fakeChannelID);
-//        personChannels.put(fakeChannelID, loadChannelData(c));
-        return c;
+        //todo something error,open im has no this issue
+        return personChannels.get(fakeChannelID);
     }
 
-    // TODO  :  这里也是需要改的，不然dataChannel的意义呢？
     public CommonChannel getOrCreateDataChannel(String id, byte type) {
-        String k = id+"-"+type;
         // in memory
-        CommonChannel commonChannel = dataChannels.get(k);
-        if(commonChannel != null) return commonChannel;
-        // persitence store
-        commonChannel = new CommonChannel();
-        store.addDataChannel(id,type);
-        // TODO  :  monitor layer
-        // add in memory
-        dataChannels.put(k, commonChannel);
-        return commonChannel;
+        CommonChannel c = dataChannels.get(id + "-" + type);
+        if(c == null) {
+            c = new CommonChannel();
+            dataChannels.put(id + "-" + type, c);
+        }
+        return dataChannels.get(id+"-"+type);
     }
-    public CommonChannel getChannelFromCacheOrStore(String id, byte type) {
-        String k = id+"-"+type;
-        CommonChannel commonChannel = channels.get(k);
-        if(commonChannel != null) return commonChannel;
-        ChannelInfo info = store.getChannel(id, type);
-        if (info == null) return null;
-        commonChannel = new CommonChannel();
-//        commonChannel.ban = info.ban;
-//        commonChannel.large = info.large;
-//        commonChannel.disband = info.disband;
-        commonChannel.id = id;
-        commonChannel.type = type;
-        loadChannelData(commonChannel);
-        channels.put(k,commonChannel);
-        return commonChannel;
+    public CommonChannel getChannelFromCache(String id, byte type) {
+        return channels.get(id+"-"+type);
     }
     // this is the key api
-    public CompletableFuture<Void> loadChannelData(CommonChannel c) {
-        return CompletableFuture.runAsync(()->{
-            List<String> subscribers = yutakStore.getSubscribers(c.id, c.type);
+    public CompletableFuture<CommonChannel> getChannelAsync(String id,byte type) {
+        return CompletableFuture.supplyAsync(()->{
+            if(getChannel(id,type)!=null) {
+                return getChannel(id,type);
+            }
+            // not in memory
+            CommonChannel c = new CommonChannel();
+            c.id = id;
+            c.type = type;
+            List<String> subscribers = yutakStore.getSubscribers(id, type);
             if(subscribers != null) {
                 for (String subscriber : subscribers) {
                     c.addSubscriber(subscriber);
                 }
             }
-
-            List<String> denyList = yutakStore.getDenyList(c.id, c.type);
+            List<String> denyList = yutakStore.getDenyList(id, type);
             if(denyList != null) {
                 c.addBlockList(denyList);
             }
-            List<String> allowList = yutakStore.getAllowList(c.id, c.type);
+            List<String> allowList = yutakStore.getAllowList(id, type);
             if (allowList != null) {
-                c.addBlockList(allowList);
+                c.addWhiteList(allowList);
             }
-            ChannelInfo channel = yutakStore.getChannel(c.id, c.type);
+            ChannelInfo channel = yutakStore.getChannel(id, type);
             if (channel != null) {
                 c.ban = channel.ban;
                 c.large = channel.large;
                 c.disband = channel.disband;
             }
-        });
+            // put into memory
+            if(type == CS.ChannelType.Person) {
+                personChannels.put(id, c);
+            }
+            channels.put(id+"-"+type, c);
+            return c;
+        },executor);
     }
     public void deleteChannelCache(String channelID,byte channelType) {
         String k = channelID+"-"+channelType;
-
-//        if(channelType == CS.ChannelType.Person) {
-//            personChannels.remove(k);
-//            return;
-//        }
-        if(channelType == CS.ChannelType.Data) {
-            dataChannels.remove(k);
+        if(isTmpChannel(channelID)) {
+            tmpChannels.remove(k);
             return;
         }
-        channels.remove(k);
+        if(channelType == CS.ChannelType.Data) {
+            dataChannels.remove(k);
+        }
+    }
+    public void removeDataChannel(String channelID,byte channelType) {
+        if(channelType == CS.ChannelType.Data) {
+            dataChannels.remove(channelID+"-"+channelType);
+        }
+    }
+    public void removeTmpChannel(String channelID,byte channelType) {
+        if(!isTmpChannel(channelID)) {return;}
+        CommonChannel c = tmpChannels.remove(channelID + "-" + channelType);
+        if(c != null && c.getSubscribedUsers().size() == 0) {
+            tmpChannels.remove(channelID + "-" + channelType);
+        }
     }
     public void createTmpChannel(String channelID,byte channelType,List<String> subscribers) {
         String k = channelID+"-"+channelType;

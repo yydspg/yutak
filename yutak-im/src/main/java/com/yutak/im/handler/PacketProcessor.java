@@ -43,7 +43,7 @@ public class PacketProcessor {
         channelManager = ChannelManager.get();
         vertx = YutakNetServer.get().vertx;
         options = Options.get();
-        store = H2Store.get();
+//        store = H2Store.get();
         deliveryManager = DeliveryManager.get();
         yutakStore = YutakStore.get();
     }
@@ -61,6 +61,7 @@ public class PacketProcessor {
         return b -> {
             // 1. statistics layer
             get().statistics().handle(b);
+
             log.info("packet send");
             // decode layer
             Packet packet = BufferKit.decodePacket(b);
@@ -241,10 +242,7 @@ public class PacketProcessor {
         }
     }
     private void processMsgs(Conn conn,List<SendPacket> packets) {
-//        ArrayList<SendPacket> tmpPackets = new ArrayList<>();
-//        for (SendPacket p : packets) {
-//            tmpPackets.add(p);
-//        }
+
         HashMap<String, List<SendPacket>> channelSendPacketMap = new HashMap<>();
         // split sendPacket by channel
         for (SendPacket p : packets) {
@@ -254,28 +252,26 @@ public class PacketProcessor {
             channelSendPackets.add(p);
             channelSendPacketMap.put(channelKey, channelSendPackets);
         }
-        // process ack packet
 
-//            List<SendAckPacket> ackPackets = processChannelPacket(conn, v.get(0).channelID, v.get(0).channelType, v);
-//            sendAckPackets.addAll(ackPackets);
-//            Future.future(this.processChannel(conn,v.get(0).channelID,v.get(0).channelType,v))
-//                    .onComplete(r->{
-//                        deliveryManager.dataOut(conn,r.result());
-//                    });
-            channelSendPacketMap.forEach((k, v) -> {
-//                vertx.executeBlocking(p -> {
-//                            p.complete(channelManager.getChannel(v.get(0).channelID, v.get(0).channelType));
-//                        })
-//                        .onSuccess(r -> {
-//                            processChannel(conn,r).handle(v);
-//                        });
-                CommonChannel channel = channelManager.getChannel(v.get(0).channelID, v.get(0).channelType);
-                if (channel != null) {
-                    processChannel(conn,channel).handle(v);
-                }else {
+        channelSendPacketMap.forEach((k, v) -> {
 
-                }
-            });
+            CommonChannel channel = channelManager.getChannel(v.get(0).channelID, v.get(0).channelType);
+            if (channel != null) {
+                // in memory
+                processChannel(conn,channel).handle(v);
+            }else {
+                // load from store
+                channelManager.getChannelAsync(v.get(0).channelID,v.get(0).channelType).whenComplete((r,e)->{
+                    if (e != null) {
+                        log.error("load channel error:{},channelID:{}.channelType:{}", e.getMessage(),v.get(0).channelID, v.get(0).channelType);
+                        return;
+                    }
+                    if (r != null ) {
+                        processChannel(conn,r).handle(v);
+                    }
+                });
+            }
+        });
     }
 
         // process delivery packet,message
@@ -291,6 +287,7 @@ public class PacketProcessor {
     // process same type packets
     private Handler<List<SendPacket>> processChannel(Conn conn,CommonChannel channel) {
         return packets-> {
+            // simple data out
             if (channel == null) {
                 deliveryManager.dataOut(conn,buildAck(CS.ReasonCode.ChannelNotExist, packets));
                 return;

@@ -48,7 +48,6 @@ public class Res {
             timeStamp = m.recvPacket.timestamp;
             clientMsgNo = m.recvPacket.clientMsgNo;
             streamNo = m.recvPacket.streamNo;
-            streamItems = H2Store.get().getStreamItems(channelID, channelType, streamNo);
             return this;
         }
     }

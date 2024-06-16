@@ -4,6 +4,7 @@ import com.yutak.im.core.YutakNetServer;
 import com.yutak.im.domain.Res;
 import com.yutak.im.store.H2Store;
 import com.yutak.im.store.Store;
+import com.yutak.im.store.YutakStore;
 import com.yutak.vertx.anno.RouteHandler;
 import com.yutak.vertx.anno.RouteMapping;
 import com.yutak.vertx.core.HttpMethod;
@@ -19,9 +20,11 @@ import java.util.List;
 
 @RouteHandler("/system")
 public class SystemApi {
-    private final Store store;
+
+    private final YutakStore yutakStore;
     public SystemApi() {
-        store = H2Store.get();
+
+        yutakStore = YutakStore.get();
     }
     @RouteMapping(path = "/block/add",method = HttpMethod.POST)
     public Handler<RoutingContext> addBlock() {
@@ -37,9 +40,14 @@ public class SystemApi {
                 return;
             }
             List<String> list = ips.getList();
-            store.addIpBlockList(list);
-            list.forEach(ip -> {YutakNetServer.get().IPBlockList.put(ip,true);});
-            ResKit.success(ctx);
+            yutakStore.addIPBlockList(list).whenComplete((r,e)->{
+                if (e != null) {
+                    ResKit.error(ctx,"add ip list error");
+                    return;
+                }
+                list.forEach(ip -> {YutakNetServer.get().IPBlockList.put(ip,true);});
+                ResKit.success(ctx);
+            });
         };
     }
     @RouteMapping(path = "/block/remove",method = HttpMethod.POST)
@@ -56,7 +64,7 @@ public class SystemApi {
                 return;
             }
             List<String> list = ips.getList();
-            store.removeIpBlockList(list);
+            yutakStore.removeIPBlockList(list);
             list.forEach(ip -> {YutakNetServer.get().IPBlockList.remove(ip);});
             ResKit.success(ctx);
         };

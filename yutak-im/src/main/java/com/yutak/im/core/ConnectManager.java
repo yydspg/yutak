@@ -1,10 +1,13 @@
 package com.yutak.im.core;
 
+import com.yutak.im.domain.CommonChannel;
 import com.yutak.im.domain.Conn;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.net.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -20,8 +23,8 @@ public class ConnectManager {
     private final AtomicInteger onlineCount ;
     private final ConcurrentHashMap<String, List<Long>> users;
     private final ConcurrentHashMap<Long,Conn> connects;
-
     private final static ConnectManager connectManager ;
+    private final Logger log = LoggerFactory.getLogger(ConnectManager.class);
     static {
         connectManager = new ConnectManager();
     }
@@ -103,6 +106,11 @@ public class ConnectManager {
             }
         }
         return res;
+    }
+    public void destroy() {
+        users.clear();
+        connects.clear();
+        log.info("yutak ==> Connect Manager destroyed");
     }
     public List<Conn> getOnlineConn(List<String> uids) {
         if (uids == null) return Collections.emptyList();

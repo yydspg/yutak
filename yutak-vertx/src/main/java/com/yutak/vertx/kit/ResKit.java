@@ -4,6 +4,7 @@ import io.vertx.core.Future;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.json.Json;
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
 
@@ -21,8 +22,11 @@ public class ResKit {
         }
         response.end();
     }
-    public static void JSON(RoutingContext routingContext, int httpcode, JsonObject result) {
-        JSON(routingContext, httpcode, result.encode());
+    public static void JSON(RoutingContext r, int httpcode, JsonObject o) {
+        JSON(r,httpcode,o.encode());
+    }
+    public static void JSON(RoutingContext ctx, int httpcode, JsonArray r) {
+        JSON(ctx, httpcode, r.encode());
     }
     public static void buildResWithFuture(Future<?> future,RoutingContext ctx) {
 //        future.onFailure(t->{

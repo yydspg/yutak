@@ -23,13 +23,12 @@ public class DeliveryManager {
     private ConnectManager connectManager;
     private Options options;
     private Vertx vertx;
-    private Store store;
     private final  static DeliveryManager instance = new DeliveryManager();
     private final AtomicLong ID = new AtomicLong(0);
     private DeliveryManager() {
         vertx = YutakNetServer.get().vertx;
         connectManager = ConnectManager.get();
-        store = H2Store.get();
+
     }
     public static DeliveryManager get() {
         return instance;
@@ -67,20 +66,6 @@ public class DeliveryManager {
             }
             dataOut(recvConn,recvPackets);
         });
-//        vertx.executeBlocking(getConn(subscribers,fromUID,fromDeviceFlag,fromDeviceUID))
-//                .onComplete(r->{
-//                    if(r.succeeded()) {
-//                        List<Conn> conns = r.result();
-//                        conns.forEach(recvConn->{
-//                            List<RecvPacket> recvPackets = new ArrayList<>();
-//                            for(Message msg : message) {
-//                                recvPackets.add(msg.recvPacket);
-//                            }
-//                            dataOut(recvConn,recvPackets);
-//                        });
-//                    }
-//                });
-
     }
     public Handler<Promise<List<Conn>>> getConn(List<String> subscribers, String fromUID, byte deviceFlag, String fromDeviceID) {
            return p->{
@@ -99,7 +84,7 @@ public class DeliveryManager {
         //statistics layer
         conn.outMsgs.getAndIncrement();
 
-        if(packets.size() == 0)return;
+        if(packets == null || packets.size() == 0)return;
         packets.forEach(p -> {
             conn.netSocket.write(((Packet)p).encode());
         });

@@ -21,12 +21,12 @@ public class YutakNetServer {
     public Options options;
     public ConnectManager connectManager;
     public ConversationManager conversationManager;
+    public ChannelManager channelManager;
     public DeliveryManager deliveryManager;
     public SystemUIDManager systemUIDManager;
     public boolean started;
     public LocalDateTime startTime ;
     public Map<String,Boolean> IPBlockList ;
-    private Store store;
     private final YutakStore yutakStore;
     private NetServer netServer;
     public Vertx vertx;
@@ -45,8 +45,16 @@ public class YutakNetServer {
         vertx = Vertx.vertx();
         ID = new AtomicLong(0);
         yutakStore = YutakStore.get();
+        channelManager = ChannelManager.get();
+        systemUIDManager = SystemUIDManager.get();
     }
-
+    public void destroy() {
+        log.info("yutak ==> server try to stop");
+        connectManager.destroy();
+        channelManager.destroy();
+        systemUIDManager.destroy();
+        log.info("yutak ==> server stopped");
+    }
     public static YutakNetServer get() {
         return yutakNetServer;
     }
