@@ -1,5 +1,16 @@
 package com.yutak.im.domain;
 
+import com.yutak.im.core.DeliveryManager;
+import com.yutak.im.proto.CS;
+import com.yutak.im.proto.RecvPacket;
+import com.yutak.im.store.YutakStore;
+import com.yutak.vertx.kit.StringKit;
+import io.vertx.core.Future;
+import io.vertx.core.Handler;
+import io.vertx.core.Promise;
+
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -82,6 +93,82 @@ public class CommonChannel extends Channel {
     }
     public List<String> getBlockList() {
         return blockList.keySet().stream().toList();
+    }
+    public void putMessage(List<Message> msgs,List<String> customSubscribers,String fromUID,int fromDeviceFlag,String fromDeviceID) {
+        if (msgs == null || msgs.isEmpty()) return;
+        List<String> list = new ArrayList<>();
+        // put real subscribers
+        if (customSubscribers != null && !customSubscribers.isEmpty()) {
+            list.addAll(customSubscribers);
+        } else {
+            list.addAll(subscribers.keySet());
+        }
+        // store message in user queue
+        Future.future(storeMessageIfNeed(msgs,list)).onComplete(m->{
+            // update conversation
+
+            //start message delivery Messages
+            if (m != null) {
+                DeliveryManager.get().routeMsg(msgs,list,m.result(),fromUID,fromDeviceID,fromDeviceFlag);
+            }
+        });
+
+    }
+    private Handler<Promise<Map<String,Integer>>> storeMessageIfNeed(List<Message> msgs, List<String> subscribers) {
+        return promise-> {
+            if (subscribers == null || subscribers.isEmpty()) {
+                promise.complete(null);
+                return;
+            }
+            Map<String, Integer> map = new HashMap<>();
+            List<Message> storeMsgs = new ArrayList<>();
+            List<Message> persistMsg = msgs.stream().filter(m -> m.recvPacket.noPersist == 0 || m.recvPacket.syncOnce == 0).toList();
+            for (String s : subscribers) {
+                for (Message m : persistMsg) {
+                    Message tmp = deepCopy(m);
+                    // message to
+                    tmp.toUID = s;
+                    tmp.large = large;
+                    if (tmp.recvPacket.channelType == CS.ChannelType.Person && StringKit.same(m.recvPacket.channelID, s)) {
+                        // message from
+                        tmp.recvPacket.channelID = m.recvPacket.fromUID;
+                    }
+                    storeMsgs.add(tmp);
+                }
+                // store message for every subscriber
+                if (storeMsgs.size() > 0) {
+                    // yutak store
+                    YutakStore.get().appendMessageOfUser(s, storeMsgs);
+                    storeMsgs.forEach(ss->map.put(s+"-"+ss.toUID,ss.recvPacket.messageSeq));
+                }
+            }
+            promise.complete(map);
+        };
+    }
+    public Message deepCopy(Message msg) {
+        Message m = new Message();
+        RecvPacket r = new RecvPacket();
+        m.large = msg.large;
+        m.toUID = msg.toUID;
+        r.channelType = msg.recvPacket.channelType;
+        r.expire  = msg.recvPacket.expire;
+        r.redDot = msg.recvPacket.redDot;
+        r.setting = msg.recvPacket.setting;
+        r.streamNo = msg.recvPacket.streamNo;
+        r.syncOnce = msg.recvPacket.syncOnce;
+        r.timestamp = msg.recvPacket.timestamp;
+        r.payload = msg.recvPacket.payload;
+        r.clientMsgNo = msg.recvPacket.clientMsgNo;
+        r.frameType = msg.recvPacket.frameType;
+        r.msgKey = msg.recvPacket.msgKey;
+        r.topic = msg.recvPacket.topic;
+        r.ClientSeq = msg.recvPacket.ClientSeq;
+        r.hasServerVersion = msg.recvPacket.hasServerVersion;
+        r.messageSeq = msg.recvPacket.messageSeq;
+        r.dup = msg.recvPacket.dup;
+        r.streamSeq = msg.recvPacket.streamSeq;
+        m.recvPacket = r;
+        return m;
     }
     public static void main(String[] args) {
         ConcurrentHashMap<String, Object> map = new ConcurrentHashMap<>();

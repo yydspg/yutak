@@ -32,7 +32,7 @@ public class ChannelApi {
         channelManager = ChannelManager.get();
         yutakStore = YutakStore.get();
     }
-    @RouteMapping(path = "/create",method = HttpMethod.POST,block = true)
+    @RouteMapping(path = "/create",method = HttpMethod.POST)
     public Handler<RoutingContext> create() {
         return ctx -> {
             Req.ChannelCreate c = ReqKit.getObjectInBody(ctx, Req.ChannelCreate.class);
@@ -64,7 +64,7 @@ public class ChannelApi {
         };
     }
     // query channel info
-    @RouteMapping(path = "/info",method = HttpMethod.POST,block = true)
+    @RouteMapping(path = "/info",method = HttpMethod.POST)
     public Handler<RoutingContext> info() {
         return ctx -> {
             ChannelInfo c = ReqKit.getObjectInBody(ctx, ChannelInfo.class);
@@ -91,7 +91,7 @@ public class ChannelApi {
             });
         };
     }
-    @RouteMapping(path = "/delete",method = HttpMethod.POST,block = true)
+    @RouteMapping(path = "/delete",method = HttpMethod.POST)
     public Handler<RoutingContext> delete() {
         return ctx -> {
             JsonObject json = ReqKit.getJSON(ctx);
@@ -111,20 +111,25 @@ public class ChannelApi {
                 return;
             }
             // persistence
-//            ChannelInfo info = store.getChannel(channelId, channelType);
-            ChannelInfo info = yutakStore.getChannel(channelId, channelType);
-            if(info == null) {
-                ResKit.success(ctx);
-                return;
-            }
-            info.ban = 1;
+
+            yutakStore.getChannelAsync(channelId, channelType).whenComplete((info, err) -> {
+                if(err != null) {
+                    log.error("get channel error:{}", err.getMessage());
+                    return;
+                }
+                if(info == null) {
+                    ResKit.success(ctx);
+                    return;
+                }
+                info.ban = 1;
 //            store.addOrUpdateChannel(info);
 //            store.removeAllSubscribers(channelId, channelType);
-            yutakStore.addOrUpdateChannel(info);
-            yutakStore.removeAllSubscribers(channelId, channelType);
-            // sync cache
-            channelManager.deleteChannelCache(channelId,channelType);
-            ResKit.success(ctx);
+                yutakStore.addOrUpdateChannel(info);
+                yutakStore.removeAllSubscribers(channelId, channelType);
+                // sync cache
+                channelManager.deleteChannelCache(channelId,channelType);
+                ResKit.success(ctx);
+            });
         };
     }
     @RouteMapping(path = "/subscriber/add",method = HttpMethod.POST)
@@ -178,7 +183,7 @@ public class ChannelApi {
              });
         };
     }
-    @RouteMapping(path = "/subscriber/del",method = HttpMethod.POST,block = true)
+    @RouteMapping(path = "/subscriber/del",method = HttpMethod.POST)
     public Handler<RoutingContext> delSubscriber() {
         return ctx -> {
             Req.RemoveSubscriber r = ReqKit.getObjectInBody(ctx, Req.RemoveSubscriber.class);
@@ -210,7 +215,7 @@ public class ChannelApi {
             });
         };
     }
-    @RouteMapping(path = "/block/add",method = HttpMethod.POST,block = true)
+    @RouteMapping(path = "/block/add",method = HttpMethod.POST)
     public Handler<RoutingContext> addBlock() {
         return ctx -> {
             Req.BlockList b = ReqKit.getObjectInBody(ctx, Req.BlockList.class);
@@ -241,7 +246,7 @@ public class ChannelApi {
             });
         };
     }
-    @RouteMapping(path = "/block/set",method = HttpMethod.POST,block = true)
+    @RouteMapping(path = "/block/set",method = HttpMethod.POST)
     public Handler<RoutingContext> setBlock() {
         return ctx -> {
             Req.BlockList b = ReqKit.getObjectInBody(ctx, Req.BlockList.class);

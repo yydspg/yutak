@@ -12,7 +12,7 @@ public @interface RouteMapping {
     String path() default "";
     // damn ! HttpMethod in Vertx has already changed ,so use this Class<? extends HttpMethod> to replace
     HttpMethod method() default HttpMethod.GET;
-    boolean block() default true;
+    boolean block() default false;
     String[] consumes() default {};
     String[] produces() default {};
     String desc() default "";

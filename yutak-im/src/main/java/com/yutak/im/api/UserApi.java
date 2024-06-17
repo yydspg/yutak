@@ -10,8 +10,6 @@ import com.yutak.im.domain.Req;
 import com.yutak.im.domain.Res;
 import com.yutak.im.proto.CS;
 import com.yutak.im.proto.DisConnectPacket;
-import com.yutak.im.store.H2Store;
-import com.yutak.im.store.Store;
 import com.yutak.im.store.YutakStore;
 import com.yutak.vertx.anno.RouteHandler;
 import com.yutak.vertx.anno.RouteMapping;
@@ -153,7 +151,7 @@ public class UserApi {
         };
     }
 
-    private void quitUserService(String uid, byte deviceFlag) {
+    private void quitUserService(String uid, int deviceFlag) {
         // update user token
         yutakStore.updateUserToken(uid,deviceFlag, CS.Device.Level.master,"");
         List<Conn> connects = connectManager.getConnectWithDeviceFlag(uid, deviceFlag);

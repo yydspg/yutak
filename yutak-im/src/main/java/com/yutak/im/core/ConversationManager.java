@@ -15,6 +15,7 @@ import java.util.concurrent.TimeUnit;
 
 // 会话管理
 public class ConversationManager {
+
     private BlockingQueue<Bucket> queue;
     private ConcurrentHashMap<String, LinkedHashMap<String, Conversation>> userConversations;
     private ConcurrentHashMap<String,Boolean> conversationPersistence;

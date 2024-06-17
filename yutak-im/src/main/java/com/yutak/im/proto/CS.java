@@ -82,16 +82,24 @@ public interface CS {
         }
 
         interface Flag {
-            byte app = 0;
-            byte web = 1;
-            byte pc = 2;
-            byte sys = 3;
-            byte all = -1;
+            int app = 0;
+            int web = 1;
+            int pc = 2;
+            int sys = 3;
+            int all = -1;
         }
     }
     interface Stream {
         byte start = 0;
         byte ing = 1;
         byte end = 2;
+    }
+    interface Setting {
+        byte unknown = 0;
+        byte receiptedEnabled = 1 << 1;
+        byte signal = 1 << 5;
+        byte noEncrypt = 1 << 4;
+        byte topic = 1 << 3;
+        byte stream = 1 << 2;
     }
 }

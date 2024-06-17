@@ -10,7 +10,7 @@ public class Message {
     public List<String> subscribers;             // 订阅者
     public byte fromDeviceFlag;                  // 发送者设备标识
     public String fromDeviceID;                  // 发送者设备ID
-    public boolean large;
+    public byte large;
     public int index;
     public long pri;
     public int retryNum;

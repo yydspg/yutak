@@ -1,16 +1,15 @@
 package com.yutak.im.core;
 
-import com.yutak.im.domain.*;
+import com.yutak.im.domain.CommonChannel;
+import com.yutak.im.domain.Conn;
+import com.yutak.im.domain.Message;
 import com.yutak.im.proto.CS;
 import com.yutak.im.proto.Packet;
 import com.yutak.im.proto.RecvPacket;
 import com.yutak.im.proto.SendPacket;
-import com.yutak.im.store.H2Store;
-import com.yutak.im.store.Store;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
-import io.vertx.core.json.JsonObject;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -39,7 +38,7 @@ public class DeliveryManager {
                 List<Message> messages = new ArrayList<>(sendPackets.size());
                 sendPackets.forEach(sendPacket -> {
                     long messageID = ID.incrementAndGet();
-                    messages.add(buildMessage(messageID,sendPacket,conn));
+//                    messages.add(buildMessage(messageID,sendPacket,conn));
                 });
             List<String> subscribedUsers = channel.getSubscribedUsers();
             routeMsg(messages,subscribedUsers,null, conn.uid, conn.deviceID, conn.deviceFlag);
@@ -47,7 +46,7 @@ public class DeliveryManager {
     }
 
     // process msg,set this method public aim to used in http
-    public void routeMsg(List<Message> message, List<String> subscribers, Map<String,Integer> syncOnceMsgSeq,String fromUID,String fromDeviceUID,byte fromDeviceFlag) {
+    public void routeMsg(List<Message> message, List<String> subscribers, Map<String,Integer> syncOnceMsgSeq,String fromUID,String fromDeviceUID,int fromDeviceFlag) {
         if(message.size() == 0|| subscribers.size() == 0) return;
 
         List<Conn> conns = new ArrayList<>();
@@ -89,7 +88,7 @@ public class DeliveryManager {
             conn.netSocket.write(((Packet)p).encode());
         });
     }
-    private Message buildMessage(long messageID,SendPacket s,Conn conn) {
+    public Message buildMessage(long messageID, byte streamFlag,SendPacket s, Conn conn) {
         RecvPacket r = new RecvPacket();
         r.frameType = CS.FrameType.RECV;
         r.redDot = s.redDot;
@@ -104,6 +103,7 @@ public class DeliveryManager {
         r.fromUID = conn.uid;
         r.expire = s.expire;
         //todo stream flag
+        r.streamFlag = streamFlag;
         Message m = new Message();
         m.recvPacket = r;
         m.fromDeviceFlag = conn.deviceFlag;

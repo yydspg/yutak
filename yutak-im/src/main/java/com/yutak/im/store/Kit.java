@@ -15,7 +15,7 @@ public class Kit {
     public static byte[] buildChannelKey(String channelID,byte channelType) {
         return (Config.channelPrefix+channelID+"-"+channelType).getBytes(StandardCharsets.UTF_8);
     }
-    public static byte[] buildUserTokenKey(String uid,byte deviceFlag) {
+    public static byte[] buildUserTokenKey(String uid,int deviceFlag) {
         return (Config.userTokenPrefix+uid+"-"+deviceFlag).getBytes(StandardCharsets.UTF_8);
     }
     public static byte[] buildSubscribeKey(String channelID,byte channelType) {

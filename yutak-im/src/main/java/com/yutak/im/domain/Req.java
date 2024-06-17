@@ -47,9 +47,9 @@ public class Req {
         public List<String> subscribers;
     }
     public static class MessageHeader {
-        public boolean noPersist;
-        public boolean redDot;
-        public boolean syncOnce;
+        public int noPersist;
+        public int redDot;
+        public int syncOnce;
     }
     public static class DeviceQuit {
         public String uid;
@@ -91,9 +91,7 @@ public class Req {
     public static void main(String[] args) {
         SendMessage sendMessage = new SendMessage();
         sendMessage.header = new MessageHeader();
-        sendMessage.header.noPersist = false;
-        sendMessage.header.redDot = false;
-        sendMessage.header.syncOnce = false;
+
         sendMessage.subscribers = new ArrayList<>();
         sendMessage.subscribers.add(":!233213");
         sendMessage.fromUID = "23";

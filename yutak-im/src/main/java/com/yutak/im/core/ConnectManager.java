@@ -86,7 +86,7 @@ public class ConnectManager {
         }
         return null;
     }
-    public List<Conn> getConnectWithDeviceFlag(String uid,byte deviceFlag) {
+    public List<Conn> getConnectWithDeviceFlag(String uid,int deviceFlag) {
         List<Long> ids = users.get(uid);
         List<Conn> conns = new ArrayList<>();
         if (ids == null || ids.size() == 0) return null;

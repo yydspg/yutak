@@ -29,7 +29,6 @@ public class PacketProcessor {
     private ConnectManager connectManager;
     private ChannelManager channelManager;
     private Options options;
-    private Store store;
     private final Logger log;
     private final YutakNetServer yutakNetServer;
     private final DeliveryManager deliveryManager;
@@ -43,7 +42,6 @@ public class PacketProcessor {
         channelManager = ChannelManager.get();
         vertx = YutakNetServer.get().vertx;
         options = Options.get();
-//        store = H2Store.get();
         deliveryManager = DeliveryManager.get();
         yutakStore = YutakStore.get();
     }
@@ -140,20 +138,21 @@ public class PacketProcessor {
                             return;
                         }
 
-                        String userToken = store.getUserToken(connectPacket.UID, connectPacket.deviceFlag);
-
-                        byte level = store.getUserDeviceLevel(connectPacket.UID, connectPacket.deviceFlag);
-                        if (StringKit.same(userToken, connectPacket.token)) {
+//                        String userToken = store.getUserToken(connectPacket.UID, connectPacket.deviceFlag);
+//                        yutakStore.getUserToken(connectPacket.UID,connectPacket.deviceFlag)
+//                        byte level = store.getUserDeviceLevel(connectPacket.UID, connectPacket.deviceFlag);
+                        if (StringKit.same(null, connectPacket.token)) {
 //                                    log.error("token not same");
                             promise.fail("client token is empty");
                             return;
                         }
-                        deviceLevel = level;
+                        // TODO  :  think here how to use rocksDb api to rebuild , async or sync ?
+                        deviceLevel = 0;
                     } else {
                         deviceLevel = CS.Device.Level.slave;
                     }
                     // check user status
-                    ChannelInfo channel = store.getChannel(connectPacket.UID, CS.ChannelType.Person);
+                    ChannelInfo channel = null;
 
                     if (channel == null) {
                         promise.fail("client channel is empty");
@@ -214,7 +213,7 @@ public class PacketProcessor {
                     p.reasonCode = CS.ReasonCode.success;
                     p.timeDiff = 123;
                     p.serverVersion = 1;
-                    p.hasServerVersion = true;
+                    p.hasServerVersion = 1;
                     // TODO  :  webhook
                     // call back build connect
                     promise.complete(p);

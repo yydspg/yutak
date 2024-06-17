@@ -14,13 +14,13 @@ public class BufferKit {
     // p -> packet ,f -> fixHeader
     public static Packet decodeFixHeader(Packet p,byte f) {
         p.frameType = f & 0xf0;
-        p.dup = (f & 0x08 ) > 0;
-        p.syncOnce = (f & 0x04) > 0;
-        p.redDot = (f & 0x02) > 0;
-        p.noPersist = (f & 0x01) > 0;
+        p.dup = f & 0x08;
+        p.syncOnce = f & 0x04;
+        p.redDot = f & 0x02;
+        p.noPersist = f & 0x01;
 
         if(p.frameType == CS.FrameType.CONNACK) {
-            p.hasServerVersion = (f & 0x01) > 0;
+            p.hasServerVersion = (byte) (f & 0x01);
         }
         return p;
     }
@@ -28,11 +28,11 @@ public class BufferKit {
         int f = 0;
         if(p.frameType == CS.FrameType.PING || p.frameType == CS.FrameType.PONG) return (byte) (f | p.frameType);
         f |= p.frameType;
-        if(p.dup) f |= 0x08;
-        if(p.syncOnce) f |= 0x04;
-        if(p.redDot) f |= 0x02;
-        if(p.noPersist) f |= 0x01;
-        if(p.hasServerVersion) f |= 0x01;
+        if(p.dup == 1) f |= 0x08;
+        if(p.syncOnce == 1) f |= 0x04;
+        if(p.redDot == 1) f |= 0x02;
+        if(p.noPersist == 1) f |= 0x01;
+        if(p.hasServerVersion == 1) f |= 0x01;
         return (byte) f;
     }
     public static Packet getPacket(Buffer b) {

@@ -3,36 +3,46 @@ package com.yutak.im.api;
 import com.yutak.im.core.ChannelManager;
 import com.yutak.im.core.DeliveryManager;
 import com.yutak.im.core.YutakNetServer;
-import com.yutak.im.domain.*;
+import com.yutak.im.domain.Conn;
+import com.yutak.im.domain.Message;
+import com.yutak.im.domain.Req;
+import com.yutak.im.domain.Res;
+import com.yutak.im.handler.PacketProcessor;
 import com.yutak.im.proto.CS;
 import com.yutak.im.proto.RecvPacket;
-import com.yutak.im.store.H2Store;
-import com.yutak.im.store.Store;
+import com.yutak.im.proto.SendPacket;
+import com.yutak.im.store.YutakStore;
 import com.yutak.vertx.anno.RouteHandler;
 import com.yutak.vertx.anno.RouteMapping;
 import com.yutak.vertx.core.HttpMethod;
 import com.yutak.vertx.kit.ReqKit;
 import com.yutak.vertx.kit.ResKit;
+import com.yutak.vertx.kit.StringKit;
 import com.yutak.vertx.kit.UUIDKit;
-import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.json.Json;
-import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @RouteHandler("/message")
 public class MessageApi {
+    private static final Logger log = LoggerFactory.getLogger(MessageApi.class);
     private final DeliveryManager deliveryManager;
     private final ChannelManager channelManager;
-//    private final Store store;
+    private final YutakStore yutakStore;
+    private final YutakNetServer yutakNetServer;
     public MessageApi() {
         channelManager = ChannelManager.get();
         deliveryManager = DeliveryManager.get();
-//        store = H2Store.get();
+        yutakStore = YutakStore.get();
+        yutakNetServer = YutakNetServer.get();
     }
 
     // send message
@@ -44,6 +54,7 @@ public class MessageApi {
                 ResKit.error(ctx,"no invalid data info");
                 return;
             }
+            // check json info
             // if channelID == null && subscribers.size() > 0, means need to create a tmp channel
             String channelID = s.channelID;
             byte channelType = s.channelType;
@@ -51,6 +62,7 @@ public class MessageApi {
                 // need to create tmp channel
                 channelID = channelManager.tmpChannelPrefix + UUIDKit.get();
                 channelType = CS.ChannelType.Group;
+                // sync
                 channelManager.createTmpChannel(channelID,channelType,s.subscribers);
             }
             String clientMsgNo = s.clientMsgNo;
@@ -164,13 +176,6 @@ public class MessageApi {
                 ResKit.error(ctx,"no invalid data info");
                 return;
             }
-//            Stream.Meta streamMeta = store.getStreamMeta(s.channelId, s.channelType, s.streamNo);
-//            if(streamMeta == null) {
-//                ResKit.error(ctx,"no invalid stream info");
-//                return;
-//            }
-//            streamMeta.streamFlag = CS.Stream.end;
-//            store.saveStreamMeta(streamMeta);
             ResKit.success(ctx);
         };
     }
@@ -212,5 +217,83 @@ public class MessageApi {
         };
     }
     //  no blocking code
+
+    private Handler<Promise<Req.SendMessage>> sendMsgChannel(Req.SendMessage req, String channelID, byte channelType, String clientMsgNo, byte streamFlag) {
+        return promise -> {
+            // build message ID
+            long msgID = yutakNetServer.ID.getAndIncrement();
+
+            // if channel type == person , just build a fake channel
+            String fakeChannelID = channelID;
+            if(channelType == CS.ChannelType.Person && StringKit.isEmpty(req.fromUID)) {
+                fakeChannelID = req.fromUID + "@" + channelID;
+            }
+            channelManager.getChannelAsync(fakeChannelID,channelType).whenComplete((channel, e) -> {
+                if(e != null) {
+                    log.error("get channel error {}", e.getMessage());
+                    promise.fail(e.getMessage());
+                    return;
+                }
+                if(channel == null) {
+                    log.error("no channel found,{}", channelID);
+                    promise.fail("no channel found");
+                    return;
+                }
+                // if channel is large ,send message options contains syncOnce and need persist --> not support
+                if (channel.large == 1 &&(req.header.syncOnce == 1 && req.header.noPersist == 0)) {
+                    log.error("channel {} not support syncOnce {} and noPersist {} ops", channelID, req.header.syncOnce, req.header.noPersist);
+                    promise.fail("channel " + channelID + " not support syncOnce " + req.header.noPersist);
+                    return;
+                }
+                // remove redundant element
+                HashSet<String> subscribers = new HashSet<>(req.subscribers);
+
+                // set stream setting
+                byte setting = 0;
+                if (StringKit.isNotEmpty(req.streamNo)) {
+                    setting = CS.Setting.stream;
+                }
+                // build message
+                Message msg = buildMessage(req, setting, msgID, subscribers);
+
+                List<Message> list = List.of(msg);
+                // need persist  do not sync once ,not tmp channel
+                if(msg.recvPacket.noPersist == 0 && msg.recvPacket.syncOnce == 0 && !channelManager.isTmpChannel(channelID)) {
+
+                    // stream message
+                    if(msg.recvPacket.streamFlag == CS.Stream.ing) {
+                        // store the stream item
+
+                    }else {
+                        // store message
+                    }
+                }
+                // web hook
+
+                channel.putMessage(list,subscribers.stream().toList(),req.fromUID, CS.Device.Flag.sys,"system");
+            });
+        };
+    }
+    public Message buildMessage(Req.SendMessage q, byte s, Long msgID, Set<String> ss) {
+        RecvPacket r = new RecvPacket();
+        r.redDot = q.header.redDot ;
+        r.syncOnce = q.header.syncOnce ;
+        r.noPersist = q.header.noPersist;
+        r.setting = s;
+        r.messageID = msgID;
+        r.streamNo = q.streamNo;
+        r.fromUID = q.fromUID;
+        r.channelID = q.channelID;
+        r.channelType = q.channelType;
+        r.expire = q.expire;
+        r.timestamp = (int) System.currentTimeMillis();
+        r.payload = q.payload;
+        Message m = new Message();
+        m.recvPacket = r;
+        // system channel type
+        m.fromDeviceFlag = CS.ChannelType.System;
+        m.subscribers = ss.stream().toList();
+        return m;
+    }
 }
 
