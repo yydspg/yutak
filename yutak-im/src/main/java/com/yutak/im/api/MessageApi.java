@@ -3,14 +3,11 @@ package com.yutak.im.api;
 import com.yutak.im.core.ChannelManager;
 import com.yutak.im.core.DeliveryManager;
 import com.yutak.im.core.YutakNetServer;
-import com.yutak.im.domain.Conn;
 import com.yutak.im.domain.Message;
 import com.yutak.im.domain.Req;
 import com.yutak.im.domain.Res;
-import com.yutak.im.handler.PacketProcessor;
 import com.yutak.im.proto.CS;
 import com.yutak.im.proto.RecvPacket;
-import com.yutak.im.proto.SendPacket;
 import com.yutak.im.store.YutakStore;
 import com.yutak.vertx.anno.RouteHandler;
 import com.yutak.vertx.anno.RouteMapping;
@@ -19,17 +16,17 @@ import com.yutak.vertx.kit.ReqKit;
 import com.yutak.vertx.kit.ResKit;
 import com.yutak.vertx.kit.StringKit;
 import com.yutak.vertx.kit.UUIDKit;
+import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.json.Json;
+import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.nio.charset.StandardCharsets;
+import java.util.*;
 
 @RouteHandler("/message")
 public class MessageApi {
@@ -70,8 +67,18 @@ public class MessageApi {
             if(clientMsgNo == null || clientMsgNo.isEmpty()) {
                 clientMsgNo = UUIDKit.get();
             }
-            // send message
-
+            String tmp = clientMsgNo;
+            // send message to channel
+            Future.future(sendMsgChannel(s,channelID,channelType,clientMsgNo,CS.Stream.ing)).onComplete(ar -> {
+                if(ar.succeeded()) {
+                    JsonObject o = new JsonObject(ar.result());
+                    o.put("clientMsgNo",tmp);
+                    ResKit.JSON(ctx,200,o);
+                    return;
+                }else {
+                    ResKit.error(ctx,ar.cause().getMessage());
+                }
+            });
         };
     }
     // send batch message
@@ -198,7 +205,7 @@ public class MessageApi {
                 return;
             }
             ArrayList<Message> messages = new ArrayList<>();
-            // TODO  : 消息存储问题，这里是否需要redis优化
+
             q.seqs.forEach(s->{
 //                Message msg = store.loadMessage(q.channelId, q.channelType, s);
 //                if(msg != null) {
@@ -218,7 +225,7 @@ public class MessageApi {
     }
     //  no blocking code
 
-    private Handler<Promise<Req.SendMessage>> sendMsgChannel(Req.SendMessage req, String channelID, byte channelType, String clientMsgNo, byte streamFlag) {
+    private Handler<Promise<Map<String,Object>>> sendMsgChannel(Req.SendMessage req, String channelID, byte channelType, String clientMsgNo, byte streamFlag) {
         return promise -> {
             // build message ID
             long msgID = yutakNetServer.ID.getAndIncrement();
@@ -254,7 +261,7 @@ public class MessageApi {
                     setting = CS.Setting.stream;
                 }
                 // build message
-                Message msg = buildMessage(req, setting, msgID, subscribers);
+                Message msg = buildMessage(req, setting, msgID,clientMsgNo, subscribers);
 
                 List<Message> list = List.of(msg);
                 // need persist  do not sync once ,not tmp channel
@@ -270,24 +277,37 @@ public class MessageApi {
                 }
                 // web hook
 
-                channel.putMessage(list,subscribers.stream().toList(),req.fromUID, CS.Device.Flag.sys,"system");
+                // put message to channel
+                Future.future(channel.putMessage(list,subscribers.stream().toList(), req.fromUID,"system", CS.Device.Level.master)).onComplete(m->{
+                    if (m.succeeded()) {
+                        HashMap<String, Object> o = new HashMap<>();
+                        o.put("messageID", msgID);
+                        o.put("messageSeq", msg.recvPacket.messageSeq);
+                        promise.complete(o);
+                    }
+                    promise.fail("put message failed");
+                });
             });
         };
     }
-    public Message buildMessage(Req.SendMessage q, byte s, Long msgID, Set<String> ss) {
+    public Message buildMessage(Req.SendMessage q, byte s, Long msgID,String clientMsgNo, Set<String> ss) {
         RecvPacket r = new RecvPacket();
+        r.msgKey = "";
         r.redDot = q.header.redDot ;
         r.syncOnce = q.header.syncOnce ;
         r.noPersist = q.header.noPersist;
         r.setting = s;
         r.messageID = msgID;
-        r.streamNo = q.streamNo;
-        r.fromUID = q.fromUID;
-        r.channelID = q.channelID;
+        r.streamNo = q.streamNo == null ? "" : q.streamNo;
+        r.fromUID = q.fromUID == null ? "" : q.fromUID;
+        r.channelID = q.channelID == null ? "" : q.channelID;
         r.channelType = q.channelType;
         r.expire = q.expire;
+        r.topic = "";
+        r.clientMsgNo = clientMsgNo;
         r.timestamp = (int) System.currentTimeMillis();
-        r.payload = q.payload;
+        r.payload = q.payload.getBytes(StandardCharsets.UTF_8);
+        System.out.println(q.payload);
         Message m = new Message();
         m.recvPacket = r;
         // system channel type

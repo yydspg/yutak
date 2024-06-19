@@ -23,6 +23,7 @@
         <module>codec</module>
         <module>yutak-orm</module>
         <module>yutak-im</module>
+        <module>yutak-client-test</module>
     </modules>
 
 

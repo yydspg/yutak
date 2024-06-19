@@ -94,56 +94,61 @@ public class CommonChannel extends Channel {
     public List<String> getBlockList() {
         return blockList.keySet().stream().toList();
     }
-    public void putMessage(List<Message> msgs,List<String> customSubscribers,String fromUID,int fromDeviceFlag,String fromDeviceID) {
-        if (msgs == null || msgs.isEmpty()) return;
-        List<String> list = new ArrayList<>();
-        // put real subscribers
-        if (customSubscribers != null && !customSubscribers.isEmpty()) {
-            list.addAll(customSubscribers);
-        } else {
-            list.addAll(subscribers.keySet());
-        }
-        // store message in user queue
-        Future.future(storeMessageIfNeed(msgs,list)).onComplete(m->{
-            // update conversation
-
-            //start message delivery Messages
-            if (m != null) {
-                DeliveryManager.get().routeMsg(msgs,list,m.result(),fromUID,fromDeviceID,fromDeviceFlag);
-            }
-        });
-
-    }
-    private Handler<Promise<Map<String,Integer>>> storeMessageIfNeed(List<Message> msgs, List<String> subscribers) {
-        return promise-> {
-            if (subscribers == null || subscribers.isEmpty()) {
+    // put message to current channel
+    public Handler<Promise<Map<String,Integer>>> putMessage(List<Message> msgs,List<String> customSubscribers,String fromUID,String fromDeviceUID,int fromDeviceFlag) {
+        return promise -> {
+            if (msgs == null || msgs.isEmpty()) {
                 promise.complete(null);
                 return;
             }
-            Map<String, Integer> map = new HashMap<>();
-            List<Message> storeMsgs = new ArrayList<>();
-            List<Message> persistMsg = msgs.stream().filter(m -> m.recvPacket.noPersist == 0 || m.recvPacket.syncOnce == 0).toList();
-            for (String s : subscribers) {
-                for (Message m : persistMsg) {
-                    Message tmp = deepCopy(m);
-                    // message to
-                    tmp.toUID = s;
-                    tmp.large = large;
-                    if (tmp.recvPacket.channelType == CS.ChannelType.Person && StringKit.same(m.recvPacket.channelID, s)) {
-                        // message from
-                        tmp.recvPacket.channelID = m.recvPacket.fromUID;
-                    }
-                    storeMsgs.add(tmp);
-                }
-                // store message for every subscriber
-                if (storeMsgs.size() > 0) {
-                    // yutak store
-                    YutakStore.get().appendMessageOfUser(s, storeMsgs);
-                    storeMsgs.forEach(ss->map.put(s+"-"+ss.toUID,ss.recvPacket.messageSeq));
-                }
+            List<String> list = new ArrayList<>();
+            // put real subscribers
+            if (customSubscribers != null && !customSubscribers.isEmpty()) {
+                list.addAll(customSubscribers);
+            } else {
+                list.addAll(subscribers.keySet());
             }
+            if(list.size() == 0) {
+                promise.complete(null);
+                return;
+            }
+            // store message in user queue
+            Map<String, Integer> map = storeMessageIfNeed(msgs, list);
+            // update conversation
+
+            // return
+            // start delivery message
+            DeliveryManager.get().routeMsg(msgs,list,map,fromUID,fromDeviceUID,fromDeviceFlag);
             promise.complete(map);
         };
+    }
+    private Map<String,Integer> storeMessageIfNeed(List<Message> msgs, List<String> subscribers) {
+        if (subscribers == null || subscribers.isEmpty()) {
+            return null ;
+        }
+        Map<String, Integer> map = new HashMap<>();
+        List<Message> storeMsgs = new ArrayList<>();
+        List<Message> persistMsg = msgs.stream().filter(m -> m.recvPacket.noPersist == 0 || m.recvPacket.syncOnce == 0).toList();
+        for (String s : subscribers) {
+            for (Message m : persistMsg) {
+                Message tmp = deepCopy(m);
+                // message to
+                tmp.toUID = s;
+                tmp.large = large;
+                if (tmp.recvPacket.channelType == CS.ChannelType.Person && StringKit.same(m.recvPacket.channelID, s)) {
+                    // message from
+                    tmp.recvPacket.channelID = m.recvPacket.fromUID;
+                }
+                storeMsgs.add(tmp);
+            }
+            // store message for every subscriber
+            if (storeMsgs.size() > 0) {
+                // yutak store
+                YutakStore.get().appendMessageOfUser(s, storeMsgs);
+                storeMsgs.forEach(ss->map.put(s+"-"+ss.toUID,ss.recvPacket.messageSeq));
+            }
+        }
+        return map;
     }
     public Message deepCopy(Message msg) {
         Message m = new Message();

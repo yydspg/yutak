@@ -37,6 +37,7 @@ public class YutakNetBuilder {
         return s -> {
             // ip block
             if (YutakNetServer.get().IPBlockList.get(s.remoteAddress().host()) != null) {
+                System.out.println("what can i say");
                 s.end();
                 return;
             }
@@ -60,7 +61,7 @@ public class YutakNetBuilder {
         netServer.exceptionHandler(t->{
             System.out.println("error:["+t.getCause()+"]");
         });
-        netServer.listen(9001)
+        netServer.listen(10001)
                 .onComplete(t->{
                    if(t.failed()) {
                        System.out.println("server start fail");
@@ -68,9 +69,9 @@ public class YutakNetBuilder {
                    else System.out.println("server start success");
                 });
         NetClient netClient = vertx1.createNetClient();
-        ScheduledThreadPoolExecutor pool = new ScheduledThreadPoolExecutor(1);
+        ScheduledThreadPoolExecutor pool = new ScheduledThreadPoolExecutor(2);
         pool.scheduleAtFixedRate(()->{
-            Future<NetSocket> future = netClient.connect(9001, "127.0.0.1").onComplete(t -> {
+            Future<NetSocket> future = netClient.connect(10001, "127.0.0.1").onComplete(t -> {
                 if (t.succeeded()) System.out.println("client start success");
                 else System.out.println("client start fail");
                 NetSocket socket = t.result();

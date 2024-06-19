@@ -24,8 +24,9 @@ public class ServerBoot {
         serverConfig.setBasePackages(basepackages);
         start(serverConfig, before, after);
     }
-    // config vertx
+    // config vertx,before means do something before server start ,after is same
     public static void start(VertxHttpServerConfig serverConfig, Consumer<VertxMvcRouterHandler> before, Consumer<VertxMvcRouterHandler> after) {
+        // build server config
         resolveDefaultServerConfig(serverConfig);
         VertxMvcRouterHandler vertxMvcRouterHandler = new VertxMvcRouterHandler(serverConfig);
         VertxHttpServerVerticle vertxHttpServerVerticle = new VertxHttpServerVerticle(vertxMvcRouterHandler, after);
@@ -34,29 +35,29 @@ public class ServerBoot {
     }
     private static void resolveDefaultServerConfig(VertxHttpServerConfig serverConfig) {
         // set base package
-        if (StringKit.isEmpty(serverConfig.getBasePackages())) {
+        if (StringKit.isEmpty(serverConfig.basePackages)) {
             throw new VertxException("basePackages must not null");
         }
-        if (Objects.isNull(serverConfig.getBeanFactory())) {
+        if (Objects.isNull(serverConfig.beanFactory)) {
 //            serverConfig.setBeanFactory(new SpringBeanFactory(serverConfig.getBasePackages()));
         }
         //set http port
-        if (Objects.isNull(serverConfig.getHttpPort())) {
+        if (Objects.isNull(serverConfig.httpPort)) {
             serverConfig.setHttpPort(VertxCS.DEFAULT_SERVER_PORT);
         }
         // set bus connect timeout
-        if (Objects.isNull(serverConfig.getEventBusconnectTimeout())) {
+        if (Objects.isNull(serverConfig.eventBusconnectTimeout)) {
             serverConfig.setEventBusconnectTimeout(VertxCS.DEFAULT_EVENTBUS_CONNECTTIMEOUT);
         }
         //set workPoolSize
-        if (Objects.isNull(serverConfig.getWorkPoolSize())) {
+        if (Objects.isNull(serverConfig.workPoolSize)) {
             serverConfig.setWorkPoolSize(Runtime.getRuntime().availableProcessors() * 2 + 1);
         }
-        if (StringKit.isEmpty(serverConfig.getStaticDir())) {
+        if (StringKit.isEmpty(serverConfig.staticDir)) {
             serverConfig.setStaticDir(VertxCS.DEALUT_STATIC_DIR);
         }
         // set vertx
-        if (Objects.isNull(serverConfig.getVertx())) {
+        if (Objects.isNull(serverConfig.vertx)) {
             EventBusOptions eventBusOptions = new EventBusOptions();
             eventBusOptions.setConnectTimeout(serverConfig.getEventBusconnectTimeout());
             // vertx Options ! this is important

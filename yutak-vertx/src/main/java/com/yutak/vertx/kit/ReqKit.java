@@ -28,9 +28,8 @@ public class ReqKit {
         try {
             return r.body().asPojo(c);
         } catch (Exception e) {
-            ResKit.error(r,"no invalid request body");
+            return null;
         }
-        return null;
     }
     @SneakyThrows
     public static <T> T getObjectInForm(HttpServerRequest r, Class<T> c) {

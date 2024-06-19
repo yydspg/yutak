@@ -47,6 +47,7 @@ public class Conn {
         packets = new ArrayList<>();
         lock = new ReentrantLock();
         channels = new ConcurrentHashMap<>();
+        outMsgs = new AtomicLong(0);
     }
     public void add(Packet packet) {
         packets.add(packet);

@@ -11,5 +11,5 @@ public abstract class Packet {
     public int frameType;
     public abstract int getFrameType();
     public abstract Buffer encode();
-    public abstract Packet decode( Buffer buffer);
+    public abstract  Packet decode( Buffer buffer);
 }

@@ -42,7 +42,7 @@ public class SystemUIDManager {
     }
     public void destroy() {
         UIDMap.clear();
-        log.info("yutak ==> SystemUIDManager destroy");
+        log.info("yutak ==> SystemUIDManager destroyed");
     }
     public void loadSystemUIDs() {
         yutakStore.getSystemUIDs().whenComplete((r,e)->{

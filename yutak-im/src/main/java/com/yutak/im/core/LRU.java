@@ -39,7 +39,7 @@ public class LRU<K,V> {
         caches.put(k, v);
         flags.put(k, new AtomicInteger(5));
         size.getAndIncrement();
-        log.info("put ops,current size:{}",size.get());
+        log.debug("{}put ops,current size:{}",name,size.get());
     }
     public V get(K k) {
         // check if this exists
@@ -65,7 +65,7 @@ public class LRU<K,V> {
                         log.info("remove k;{}",k);
                 }
             }
-            log.info("decrement,current size:{}",size.get());
+            log.debug("{}decrement,current size:{}",name,size.get());
         },1,1, TimeUnit.MINUTES);
 
     }

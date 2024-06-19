@@ -25,6 +25,10 @@ public class Options {
     private final static Options options = new Options();
     private  Options() {
         managerCount = new ManagerCount();
+        managerCount.UID = "managerCount";
+        managerCount.token = "managerToken";
+        managerCount.on = true;
+        tokenAuthOn = false;
     }
     public static Options get() {return options;}
     public static class WSSConfig {

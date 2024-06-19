@@ -43,7 +43,7 @@ public class Req {
         public String channelID;
         public byte channelType;
         public int expire;
-        public byte[] payload;
+        public String payload;
         public List<String> subscribers;
     }
     public static class MessageHeader {
@@ -72,7 +72,7 @@ public class Req {
         public String fromUID;
         public String channelID;
         public byte channelType;
-        public byte[] payload;
+        public String payload;
     }
     public static class StreamEnd {
         public String channelId;
@@ -96,7 +96,7 @@ public class Req {
         sendMessage.subscribers.add(":!233213");
         sendMessage.fromUID = "23";
         String s = new String("12312");
-        sendMessage.payload = s.getBytes(StandardCharsets.UTF_8);
+//        sendMessage.payload = s.getBytes(StandardCharsets.UTF_8);
         String encode = Json.encode(sendMessage);
         System.out.println(encode);
     }

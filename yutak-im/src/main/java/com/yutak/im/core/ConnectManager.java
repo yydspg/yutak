@@ -37,6 +37,8 @@ public class ConnectManager {
         return connectManager;
     }
     public void addConnect(Conn conn) {
+        log.info("add connect,uid {},id {}",conn.uid,conn.id);
+        log.info("current users size:{}",users.size());
         List<Long> uids = users.get(conn.uid);
         if (uids == null) uids = new ArrayList<>(2);
         uids.add(conn.id);
@@ -110,7 +112,7 @@ public class ConnectManager {
     public void destroy() {
         users.clear();
         connects.clear();
-        log.info("yutak ==> Connect Manager destroyed");
+        log.info("yutak ==> ConnectManager destroyed");
     }
     public List<Conn> getOnlineConn(List<String> uids) {
         if (uids == null) return Collections.emptyList();

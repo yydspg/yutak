@@ -10,12 +10,13 @@ import com.yutak.im.proto.SendPacket;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
+import lombok.extern.slf4j.Slf4j;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
-
+@Slf4j
 public class DeliveryManager {
 
     private ChannelManager channelManager;
@@ -63,6 +64,7 @@ public class DeliveryManager {
             for(Message msg : message) {
                 recvPackets.add(msg.recvPacket);
             }
+            log.info("data out {}",recvPackets);
             dataOut(recvConn,recvPackets);
         });
     }
@@ -77,16 +79,21 @@ public class DeliveryManager {
                p.complete(conns);
            };
     }
-    public void dataOut(Conn conn, List packets) {
+    public void dataOut(Conn conn, List<? extends Packet> packets) {
         // websocket connect or tcp
 
         //statistics layer
         conn.outMsgs.getAndIncrement();
 
         if(packets == null || packets.size() == 0)return;
-        packets.forEach(p -> {
-            conn.netSocket.write(((Packet)p).encode());
-        });
+        log.info("real data out{}",packets);
+        for (int i = 0; i < packets.size(); i++) {
+            try {
+                conn.netSocket.write(packets.get(i).encode());
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
     }
     public Message buildMessage(long messageID, byte streamFlag,SendPacket s, Conn conn) {
         RecvPacket r = new RecvPacket();

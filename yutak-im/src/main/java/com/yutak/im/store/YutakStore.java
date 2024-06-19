@@ -128,8 +128,6 @@ public class YutakStore {
             return null;
         }
         ChannelInfo c = new ChannelInfo();
-        c.channelId = channelID;
-        c.channelType = channelType;
         c.ban = V[0];
         c.large = V[1];
         c.disband = V[2];

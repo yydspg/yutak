@@ -13,6 +13,7 @@ import com.yutak.im.store.YutakStore;
 import com.yutak.im.store.H2Store;
 import com.yutak.im.store.Store;
 import com.yutak.vertx.kit.StringKit;
+import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
@@ -59,8 +60,8 @@ public class PacketProcessor {
         return b -> {
             // 1. statistics layer
             get().statistics().handle(b);
-
-            log.info("packet send");
+            System.out.println("packet handler received");
+            log.debug("packet send");
             // decode layer
             Packet packet = BufferKit.decodePacket(b);
             // check data packet,if return null means decode fail
@@ -74,7 +75,7 @@ public class PacketProcessor {
                 // connect status build
                 final ConnectPacket connectPacket = (ConnectPacket) packet;
                 // build connect
-                vertx.executeBlocking(get().connect(s, connectPacket)).onComplete(res -> {
+                Future.future(get().connect(s, connectPacket)).onComplete(res -> {
                     //connect success
                     if (res.succeeded() && res.result() != null) {
                         s.write((res.result()).encode());
@@ -123,7 +124,6 @@ public class PacketProcessor {
                         return;
                     }
                     // default salve
-                    byte deviceLevel = CS.Device.Level.slave;
                     // verify token
                     if (StringKit.same(options.managerCount.UID, connectPacket.clientKey)) {
                         if (options.managerCount.on && !StringKit.same(options.managerCount.token, connectPacket.token)) {
@@ -139,7 +139,7 @@ public class PacketProcessor {
                         }
 
 //                        String userToken = store.getUserToken(connectPacket.UID, connectPacket.deviceFlag);
-//                        yutakStore.getUserToken(connectPacket.UID,connectPacket.deviceFlag)
+//                        yutakStore.getUserToken(connectPacket.UID,connectPacket.deviceFlag);
 //                        byte level = store.getUserDeviceLevel(connectPacket.UID, connectPacket.deviceFlag);
                         if (StringKit.same(null, connectPacket.token)) {
 //                                    log.error("token not same");
@@ -147,76 +147,78 @@ public class PacketProcessor {
                             return;
                         }
                         // TODO  :  think here how to use rocksDb api to rebuild , async or sync ?
-                        deviceLevel = 0;
-                    } else {
-                        deviceLevel = CS.Device.Level.slave;
                     }
                     // check user status
                     ChannelInfo channel = null;
-
-                    if (channel == null) {
-                        promise.fail("client channel is empty");
-                        return;
-                    }
-//                    if (channel.ban) {
-////                                log.error("user status ban");
-//                        promise.fail("client ban");
-//                        return;
-//                    }
-                    // TODO  :  this security need more!!! 中间加密的一步没做呢！！！ aesIV...
-                    List<String> pair = SecurityKit.getPair();
-
-                    // process device
-                    List<Conn> oldConns = connectManager.getConnectWithDeviceFlag(connectPacket.UID, connectPacket.deviceFlag);
-                    if (oldConns.size() > 0) {
-                        if (deviceLevel == CS.Device.Level.master) {
-                            // remove old device
-                            oldConns.forEach(conn -> {
-                                connectManager.removeConnect(conn.id);
-                                // send disConnect packet to device which has been disConnect
-                                if (StringKit.diff(conn.deviceID, connectPacket.deviceID)) {
-                                    log.info("remove old conn");
-                                    DisConnectPacket p = new DisConnectPacket();
-                                    p.reasonCode = CS.ReasonCode.ConnectKick;
-                                    p.reason = "login in other device";
-                                    // send disconnect packet
-                                    conn.netSocket.write(p.encode());
-                                }
-                                conn.close();
-                            });
-                            // slave service,just remove same device
-                        } else if (deviceLevel == CS.Device.Level.slave) {
-                            oldConns.forEach(conn -> {
-                                if (StringKit.same(conn.deviceID, connectPacket.deviceID)) {
-                                    log.info("remove slave conn");
-                                    connectManager.removeConnect(conn.id);
-                                    conn.close();
-                                }
-                            });
+                    yutakStore.getChannelAsync(connectPacket.UID, CS.ChannelType.Person).whenComplete((res,e)->{
+                        if (e != null) {
+                            log.error("user {} get channel error{}",connectPacket.UID ,e.getMessage());
+                            promise.fail(e);
+                            return;
                         }
-                    }
-                    // build Conn
-                    Conn conn = new Conn(SocketKit.ipToLong(s.remoteAddress().host()), s.remoteAddress().host(), s);
-                    conn.auth = true;
-                    conn.deviceFlag = connectPacket.deviceFlag;
-                    conn.deviceID = connectPacket.deviceID;
-                    conn.uid = connectPacket.UID;
-                    conn.deviceLevel = deviceLevel;
-                    conn.maxIdle = options.maxIdle;
-                    // add conn in memory
-                    connectManager.addConnect(conn);
+                        boolean ban = false;
+                        if (res != null) {
+                            ban = res.ban == 1;
+                        }
+                        if (ban) {
+                            promise.fail("user channel is baned");
+                            return;
+                        }
+                        // TODO  :  this security need more!!! 中间加密的一步没做呢！！！ aesIV...
+                        List<String> pair = SecurityKit.getPair();
 
-                    ConnAckPacket p = new ConnAckPacket();
-                    BufferKit.encodeFixHeader(p);
-                    p.salt = "别看了，赶紧补上";
-                    p.serverKey = "...";
-                    p.reasonCode = CS.ReasonCode.success;
-                    p.timeDiff = 123;
-                    p.serverVersion = 1;
-                    p.hasServerVersion = 1;
-                    // TODO  :  webhook
-                    // call back build connect
-                    promise.complete(p);
+                        // process device
+                        List<Conn> oldConns = connectManager.getConnectWithDeviceFlag(connectPacket.UID, connectPacket.deviceFlag);
+                        if (oldConns != null && oldConns.size() > 0) {
+                            if (connectPacket.deviceFlag == CS.Device.Level.master) {
+                                // remove old device
+                                oldConns.forEach(conn -> {
+                                    connectManager.removeConnect(conn.id);
+                                    // send disConnect packet to device which has been disConnect
+                                    if (StringKit.diff(conn.deviceID, connectPacket.deviceID)) {
+                                        log.debug("remove user {} old conn", conn.id);
+                                        DisConnectPacket p = new DisConnectPacket();
+                                        p.reasonCode = CS.ReasonCode.ConnectKick;
+                                        p.reason = "login in other device";
+                                        // send disconnect packet
+                                        conn.netSocket.write(p.encode());
+                                    }
+                                    conn.close();
+                                });
+                                // slave service,just remove same device
+                            } else if (connectPacket.deviceFlag == CS.Device.Level.slave) {
+                                oldConns.forEach(conn -> {
+                                    if (StringKit.same(conn.deviceID, connectPacket.deviceID)) {
+                                        log.debug("remove user {} slave conn",conn.id);
+                                        connectManager.removeConnect(conn.id);
+                                        conn.close();
+                                    }
+                                });
+                            }
+                        }
+                        // build Conn
+                        Conn conn = new Conn(SocketKit.ipToLong(s.remoteAddress().host()), s.remoteAddress().host(), s);
+                        conn.auth = true;
+                        conn.deviceFlag = connectPacket.deviceFlag;
+                        conn.deviceID = connectPacket.deviceID;
+                        conn.uid = connectPacket.UID;
+                        conn.deviceLevel = connectPacket.deviceFlag;
+                        conn.maxIdle = options.maxIdle;
+                        // add conn in memory
+                        connectManager.addConnect(conn);
+
+                        ConnAckPacket p = new ConnAckPacket();
+                        BufferKit.encodeFixHeader(p);
+                        p.salt = "别看了，赶紧补上";
+                        p.serverKey = "...";
+                        p.reasonCode = CS.ReasonCode.success;
+                        p.timeDiff = 123;
+                        p.serverVersion = 1;
+                        p.hasServerVersion = 1;
+                        // TODO  :  webhook
+                        // call back build connect
+                        promise.complete(p);
+                    });
                 };
     }
     private void process(Conn conn) {

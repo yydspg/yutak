@@ -84,10 +84,20 @@ public class ChannelManager {
             if(getChannel(id,type)!=null) {
                 return getChannel(id,type);
             }
+            // load from store
             // not in memory
+
+            ChannelInfo info = yutakStore.getChannel(id, type);
+            if (info == null) {
+                // no such channel
+                return null;
+            }
             CommonChannel c = new CommonChannel();
             c.id = id;
             c.type = type;
+            c.ban = info.ban;
+            c.large = info.large;
+            c.disband = info.disband;
             List<String> subscribers = yutakStore.getSubscribers(id, type);
             if(subscribers != null) {
                 for (String subscriber : subscribers) {
@@ -102,17 +112,13 @@ public class ChannelManager {
             if (allowList != null) {
                 c.addWhiteList(allowList);
             }
-            ChannelInfo channel = yutakStore.getChannel(id, type);
-            if (channel != null) {
-                c.ban = channel.ban;
-                c.large = channel.large;
-                c.disband = channel.disband;
-            }
+
             // put into memory
             if(type == CS.ChannelType.Person) {
                 personChannels.put(id, c);
+            } else {
+                channels.put(id+"-"+type, c);
             }
-            channels.put(id+"-"+type, c);
             return c;
         },executor);
     }

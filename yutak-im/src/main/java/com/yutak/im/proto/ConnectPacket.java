@@ -57,9 +57,9 @@ public class ConnectPacket extends Packet {
 
     public static void main(String[] args) {
         ConnectPacket c = new ConnectPacket();
-        c.UID = "cvasdffwefwe";
+        c.UID = "wanhao";
         c.clientTimestamp = System.currentTimeMillis();
-        c.deviceID = "gradewefwef";
+        c.deviceID = "ada";
         c.token = "segvefewfw";
         c.deviceFlag = 1;
         c.clientKey = "cefcefwefAWEF";
