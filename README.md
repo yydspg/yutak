@@ -1,5 +1,5 @@
 # yutak
-instance message system,built by react framework
+instant message system,built by react framework
 # contributor
 yydspg
 # contract
