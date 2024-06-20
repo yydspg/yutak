@@ -37,14 +37,14 @@ public class ConnectManager {
         return connectManager;
     }
     public void addConnect(Conn conn) {
-        log.info("add connect,uid {},id {}",conn.uid,conn.id);
-        log.info("current users size:{}",users.size());
         List<Long> uids = users.get(conn.uid);
         if (uids == null) uids = new ArrayList<>(2);
         uids.add(conn.id);
         users.put(conn.uid, uids);
         connects.put(conn.id,conn);
         onlineCount.incrementAndGet();
+        log.info("add connect,uid {},id {}",conn.uid,conn.id);
+        log.info("current users size:{}",users.size());
     }
     public Conn getConnect(long id) {
         return connects.get(id);
@@ -54,6 +54,7 @@ public class ConnectManager {
         List<Long> ids = users.get(conn.uid);
         // remove real connect
         connects.remove(id);
+        log.info("remove connect,uid {},id {}",conn.uid,id);
         // remove connect in user model
         onlineCount.decrementAndGet();
         for (int i = 0; i < ids.size(); i++) {

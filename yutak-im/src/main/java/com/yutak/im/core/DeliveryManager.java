@@ -59,6 +59,7 @@ public class DeliveryManager {
                 }
             }
         }
+        System.out.println("connects size:"+conns.size());
         conns.forEach(recvConn->{
             List<RecvPacket> recvPackets = new ArrayList<>();
             for(Message msg : message) {

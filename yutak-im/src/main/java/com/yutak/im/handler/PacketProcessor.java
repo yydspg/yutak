@@ -60,8 +60,6 @@ public class PacketProcessor {
         return b -> {
             // 1. statistics layer
             get().statistics().handle(b);
-            System.out.println("packet handler received");
-            log.debug("packet send");
             // decode layer
             Packet packet = BufferKit.decodePacket(b);
             // check data packet,if return null means decode fail
@@ -176,7 +174,7 @@ public class PacketProcessor {
                                     connectManager.removeConnect(conn.id);
                                     // send disConnect packet to device which has been disConnect
                                     if (StringKit.diff(conn.deviceID, connectPacket.deviceID)) {
-                                        log.debug("remove user {} old conn", conn.id);
+                                        log.debug("remove user {} old conn", conn.uid);
                                         DisConnectPacket p = new DisConnectPacket();
                                         p.reasonCode = CS.ReasonCode.ConnectKick;
                                         p.reason = "login in other device";
@@ -189,8 +187,9 @@ public class PacketProcessor {
                             } else if (connectPacket.deviceFlag == CS.Device.Level.slave) {
                                 oldConns.forEach(conn -> {
                                     if (StringKit.same(conn.deviceID, connectPacket.deviceID)) {
-                                        log.debug("remove user {} slave conn",conn.id);
+                                        log.debug("remove user {} slave conn",conn.uid);
                                         connectManager.removeConnect(conn.id);
+                                        System.out.println(connectManager.getOnlineCount());
                                         conn.close();
                                     }
                                 });

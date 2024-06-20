@@ -42,6 +42,7 @@ public class YutakNetBuilder {
                 return;
             }
             s.handler(processor.pipe(s));
+            s.closeHandler(YutakProcessor.getInstance().close(s));
         };
     }
     public static void main(String[] args) {

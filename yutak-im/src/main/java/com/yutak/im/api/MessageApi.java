@@ -307,7 +307,6 @@ public class MessageApi {
         r.clientMsgNo = clientMsgNo;
         r.timestamp = (int) System.currentTimeMillis();
         r.payload = q.payload.getBytes(StandardCharsets.UTF_8);
-        System.out.println(q.payload);
         Message m = new Message();
         m.recvPacket = r;
         // system channel type

@@ -1,14 +1,10 @@
 package com.yutak.client;
 
-import com.yutak.im.kit.BufferKit;
 import com.yutak.im.proto.CS;
 import com.yutak.im.proto.ConnectPacket;
-import com.yutak.im.proto.Packet;
 import com.yutak.im.proto.RecvPacket;
 import io.vertx.core.Vertx;
-import io.vertx.core.buffer.Buffer;
 import io.vertx.core.net.NetClient;
-import io.vertx.core.net.NetServer;
 import io.vertx.core.net.NetSocket;
 import lombok.extern.slf4j.Slf4j;
 
@@ -28,10 +24,11 @@ public class Client {
                 c.noPersist =1;
                 c.redDot = 0;
                 c.syncOnce = 0;
-                c.UID = ClientManager.getUID();
+                c.UID = "3";
                 c.deviceID = "test";
                 c.token = "demo";
                 c.clientKey = "hello";
+                c.deviceFlag = 1;
                 this.UID = c.UID;
 //                Buffer buffer = c.encode();
 
@@ -58,7 +55,7 @@ public class Client {
                     RecvPacket r = new RecvPacket();
                     r.decode(b);
                     if(r != null) {
-                        System.out.println(r);
+                        log.info(this.toString()+new String(r.payload));
 //                        System.out.println(new String(r.payload));
                     }
                 });
@@ -92,16 +89,15 @@ public class Client {
 //        });
 //        netServer.listen(8080);
         int i = 0;
-        while(i < 3){
-            i ++;
             Client client = new Client();
             client.build();
+            log.info(client.toString());
             try {
                 TimeUnit.SECONDS.sleep(1);
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
             }
-        }
+
 //        TimeUnit.SECONDS.sleep(3);
     }
 }

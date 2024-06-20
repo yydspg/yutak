@@ -98,7 +98,7 @@ public class CommonChannel extends Channel {
     public Handler<Promise<Map<String,Integer>>> putMessage(List<Message> msgs,List<String> customSubscribers,String fromUID,String fromDeviceUID,int fromDeviceFlag) {
         return promise -> {
             if (msgs == null || msgs.isEmpty()) {
-                promise.complete(null);
+                promise.fail("msgs is null or empty");
                 return;
             }
             List<String> list = new ArrayList<>();
@@ -108,8 +108,9 @@ public class CommonChannel extends Channel {
             } else {
                 list.addAll(subscribers.keySet());
             }
+            System.out.println("subscribers size:"+list.size());
             if(list.size() == 0) {
-                promise.complete(null);
+                promise.fail("no subscribers");
                 return;
             }
             // store message in user queue
