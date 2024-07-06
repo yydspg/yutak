@@ -492,25 +492,14 @@ public class H2Store implements Store {
         return List.of();
     }
 
-    @Override
-    public void saveStreamMeta(Stream.Meta meta) {
 
-    }
 
     @Override
     public void streamEnd(String channelID, byte channelType, String streamNo) {
 
     }
 
-    @Override
-    public Stream.Meta getStreamMeta(String channelID, byte channelType, String streamNo) {
-        return null;
-    }
 
-    @Override
-    public int appendStreamItem(String channelID, byte channelType, String streamNo, Stream.Item item) {
-        return 0;
-    }
 
     @Override
     public List<Res.StreamItem> getStreamItems(String channelID, byte channelType, String streamNo) {

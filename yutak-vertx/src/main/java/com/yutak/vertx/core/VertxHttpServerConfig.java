@@ -2,11 +2,14 @@ package com.yutak.vertx.core;
 
 
 import com.yutak.vertx.template.AbstractTemplateEngineDelegate;
+import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
+import io.vertx.core.http.ServerWebSocket;
 import io.vertx.ext.web.Router;
 import lombok.Data;
 
+import java.net.ServerSocket;
 import java.util.List;
 import java.util.Map;
 
@@ -24,14 +27,20 @@ public class VertxHttpServerConfig {
      * event 执行超时时间
      */
     public  Integer eventBusconnectTimeout;
+    /*
+    core concept
+     */
     public Vertx vertx;
+    /*
+    vertx-web
+     */
     public Router router;
     /**
      * 静态资源目录 多个,分隔
      */
     public String staticDir;
     /**
-     * , split
+     * split
      */
     public  String basePackages;
     /**
@@ -56,4 +65,9 @@ public class VertxHttpServerConfig {
      * 服务基础路径
      */
     public String serverBasePath;
+
+    /*
+        web socket server
+     */
+    public Handler<ServerWebSocket> serverSocketHandler;
 }

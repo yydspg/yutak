@@ -86,7 +86,7 @@ public class VertxMvcRouterHandler {
     // TODO  :  figure out this method
     private void doRegisterInterceptorPreHandler(Router router,String path,IReqInterceptor interceptor) {
         Route route = null;
-        if(path == null || path.length() == 0){
+        if(path == null || path.isEmpty()){
             route = router.route();
         }else route = router.route(path);
         // register preHandler
@@ -141,7 +141,7 @@ public class VertxMvcRouterHandler {
     }
     private void registerRouterExceptionHandler(Router router) {
         Set<Object> exceptionHandlers = beanFactory.getTypesAnnotatedWith(RouterAdvice.class);
-        if(exceptionHandlers == null || exceptionHandlers.size() == 0)  return;
+        if(exceptionHandlers == null || exceptionHandlers.isEmpty())  return;
         Map<Class<? extends Throwable>,Handler<RoutingContext>> exceptionHandlerMap = new HashMap<>();
         exceptionHandlers.forEach(routerAdviceHandler->{
             Set<Method> exceptionHandlerMethods = ReflectKit.getMethodsWithAnnotation(routerAdviceHandler.getClass(), ExceptionHandler.class);
@@ -177,7 +177,7 @@ public class VertxMvcRouterHandler {
     // register RouterHandler
     private void registerRouterHandler(Router router) {
         Set<Object> routeHandlers = beanFactory.getTypesAnnotatedWith(RouteHandler.class);
-        if(routeHandlers == null || routeHandlers.size() == 0) return;
+        if(routeHandlers == null || routeHandlers.isEmpty()) return;
         routeHandlers.forEach(handler->{
             // extract current RouteHandler route info
             List<RouteInfo> routeInfos = extractRouteInfos(handler.getClass());
@@ -248,6 +248,7 @@ public class VertxMvcRouterHandler {
                     log.info("register interceptor {} ", t);
                     interceptorList.add(t);
                 });
+        // TODO  : here may be some thing wrong ,such router
     }
     private void initVertxMessageConverter() {
         httpServerConfig.setMessageConvertorList(new ArrayList<>());

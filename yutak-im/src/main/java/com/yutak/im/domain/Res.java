@@ -1,8 +1,6 @@
 package com.yutak.im.domain;
 
-import com.yutak.im.store.H2Store;
-
-import java.util.ArrayList;
+import java.time.LocalDateTime;
 import java.util.List;
 
 public class Res {
@@ -51,9 +49,49 @@ public class Res {
             return this;
         }
     }
+    public static class Conversation {
+        public String channelID; // Conversation channel
+        public int channelType;
+        public int unreadCount;    // Number of unread messages
+        public long timestamp;  // Last session timestamp (10 digits)
+        public Msg msg;
+    }
     public static class StreamItem {
         public int streamSeq;
         public String clientMsgNo;
         public byte[] blob;
     }
-}
+    public static class ChannelRecentMsg {
+        public String channelID;
+        public int channelType;
+        public List<Msg> msgs;
+    }
+    public static class Conn {
+        public int total;       // total conn num
+        public int offset;      // offset num
+        public int limit;
+        public String now;
+        public ConnInfo connInfo;
+    }
+    public static class ConnInfo {
+        public long ID;
+        public String UID;
+        public String IP;
+        public int port;
+        public String upTime;
+        public String Idle;
+        public int pendingBytes;
+        public long inboundMsgs;
+        public long outboundMsgs;
+        public String device;
+        public String deviceID;
+        public int version;
+        public LocalDateTime lastActivity;
+    }
+    public static class ChannelNum {
+        public int tmpChannelNum;
+        public int personChannelNum;
+        public int commonChannelNum;
+        public int dataChannelNum;
+    }
+ }

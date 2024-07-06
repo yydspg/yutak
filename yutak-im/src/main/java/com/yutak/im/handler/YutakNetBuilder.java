@@ -1,8 +1,8 @@
 package com.yutak.im.handler;
 
-import com.yutak.im.core.ConnectManager;
 import com.yutak.im.core.Options;
 import com.yutak.im.core.YutakNetServer;
+import com.yutak.im.core.YutakSocket;
 import com.yutak.im.proto.CS;
 import com.yutak.im.proto.ConnectPacket;
 import com.yutak.im.proto.PingPacket;
@@ -19,30 +19,47 @@ import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicLong;
 
 public class YutakNetBuilder {
-    private ConnectManager connectManager ;
     private PacketProcessor processor;
     private Options options;
     private Store store;
     private final Logger log ;
-    private final AtomicLong idGenerator = new AtomicLong(0);
-    public YutakNetBuilder() {
+    private final static YutakNetBuilder yutakNetBuilder = new YutakNetBuilder();
+    private YutakNetBuilder() {
         log = LoggerFactory.getLogger(YutakNetBuilder.class);
         processor = PacketProcessor.get();
     }
-
+    public static YutakNetBuilder get() {
+        return yutakNetBuilder;
+    }
     public Handler<NetSocket> netHandler() {
         return s -> {
             // ip block
             if (YutakNetServer.get().IPBlockList.get(s.remoteAddress().host()) != null) {
-                System.out.println("what can i say");
                 s.end();
                 return;
             }
-            s.handler(processor.pipe(s));
-            s.closeHandler(YutakProcessor.getInstance().close(s));
+            // send to next layer packet process
+            YutakSocket y = new YutakSocket(s);
+            s.handler(processor.pipe(y));
+            s.closeHandler(processor.close(y));
+        };
+    }
+    public Handler<Throwable> exceptionHandler() {
+        return e -> {
+            log.error(e.getMessage());
+            // TODO  :  data out process exception message to client
+        };
+    }
+    public Handler<NetServer> startSuccessHandler() {
+        return n -> {
+          log.debug("yutak ==> net server started on port {}", n.actualPort());
+        };
+    }
+    public Handler<Throwable> startFailHandler() {
+        return e -> {
+            log.error("yutak ==> net server failed to start ,cause {}", e.getMessage());
         };
     }
     public static void main(String[] args) {

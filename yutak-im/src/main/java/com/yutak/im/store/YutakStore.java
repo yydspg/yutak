@@ -1,6 +1,8 @@
 package com.yutak.im.store;
 
+import com.yutak.im.domain.Conversation;
 import com.yutak.im.domain.Message;
+import com.yutak.im.proto.CS;
 import com.yutak.vertx.kit.StringKit;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -274,9 +276,73 @@ public class YutakStore {
     public CompletableFuture<Void> appendMessageOfUser(String uid,List<Message> message) {
         return CompletableFuture.runAsync(()->{
             // TODO  :  not impl right now
+        },executor);
+    }
+    public List<Conversation> getConversations(String uid) {
+        if (StringKit.isEmpty(uid)) {
+            return null;
+        }
+        return getList(Kit.slotNum(uid),Kit.buildConversationKey(uid));
+    }
+    public Conversation getConversation(String uid,String channelID,int channelType) {
+        List<Conversation> conversations = getConversations(uid);
+        if (conversations == null || conversations.isEmpty()) return null;
+        for (Conversation conversation : conversations) {
+            if (StringKit.same(channelID,conversation.channelID)&&channelType == conversation.channelType) {
+                return conversation;
+            }
+        }
+        return null;
+    }
+    public CompletableFuture<List<Conversation>> getConversationsAsync(String uid) {
+        return CompletableFuture.supplyAsync(()-> getList(Kit.slotNum(uid),Kit.buildConversationKey(uid)),executor);
+    }
+    public CompletableFuture<Void> deleteConversationAsync(String uid,String channelID,int channelType) {
+        return CompletableFuture.runAsync(()->{
+            deleteConversation(uid,channelID,channelType);
         });
     }
-    private void delList(int slotNum,byte[] K,List<String> list) {
+    public void deleteConversation(String uid,String channelID,int channelType) {
+        List<Conversation> list = getConversations(uid);
+        if(list == null||list.isEmpty()){
+            return;
+        }
+        List<Conversation> update = new ArrayList<>();
+        for (Conversation conversation : list) {
+            if (!StringKit.same(conversation.channelID,channelID) && conversation.channelType == channelType) {
+                update.add(conversation);
+            }
+        }
+        putList(Kit.slotNum(uid),Kit.buildConversationKey(uid),update);
+    }
+    private List<Conversation> buildNewConversations(String uid,List<Conversation> updateConversations) {
+        // no conversation
+        List<Conversation> oldConversations = getConversations(uid);
+        if (oldConversations == null || oldConversations.isEmpty()) {
+            return updateConversations;
+        }
+        // has old conversation info
+        List<Conversation> newConversations = new ArrayList<>(oldConversations.size()+updateConversations.size());
+        newConversations.addAll(oldConversations);
+        for (Conversation update : updateConversations) {
+            int index = -1;
+            for (int i = 0; i < oldConversations.size(); i++) {
+                Conversation old = oldConversations.get(i);
+                if (StringKit.same(old.channelID, update.channelID) && old.channelType == update.channelType) {
+                        index = i;
+                }
+            }
+            if (index != -1) {
+                // update conversation
+                newConversations.add(index, update);
+            }else{
+                // add conversation
+                newConversations.add(update);
+            }
+        }
+        return newConversations;
+    }
+    private void delList(int slotNum,byte[] K,List list) {
         byte[] v = getV(slotNum, K);
         JsonArray o = Kit.decodeArray(v);
         JsonArray r = new JsonArray();
@@ -288,7 +354,7 @@ public class YutakStore {
         });
         putKV(slotNum,K,Kit.encode(r));
     }
-    private void putList(int slotNum,byte[] K,List<String> list) {
+    private void putList(int slotNum,byte[] K,List list) {
         byte[] v = getV(slotNum, K);
         JsonArray o = null;
         if (v == null || v.length == 0){
@@ -299,7 +365,7 @@ public class YutakStore {
         list.forEach(o::add);
         putKV(slotNum,K,Kit.encode(o));
     }
-    private List<String> getList(int slotNum,byte[] K) {
+    private List getList(int slotNum,byte[] K) {
         byte[] v = getV(slotNum, K);
         if(v == null) {
             return null;
@@ -331,13 +397,32 @@ public class YutakStore {
     }
     public static void main(String[] args) {
 
-        YutakStore yutakStore = new YutakStore();
-        yutakStore.putKV(1,"man".getBytes(),"what can i say".getBytes());
-        yutakStore.getV(1,"nihao".getBytes());
-        String s = new String(yutakStore.getV(1, "man".getBytes()));
-        System.out.println(s);
-
-        yutakStore.destroy();
-
+        List<Conversation> conversations = new ArrayList<>();
+        int t = 1001;
+        for (int i = 0; i < 4; i++) {
+            Conversation c = new Conversation();
+            c.channelID = String.valueOf(t);
+            c.channelType = CS.ChannelType.Person;
+            c.unreadCount = 1;
+            conversations.add(c);
+            t++;
+        }
+        printList(conversations);
+        List<Conversation> updateConversations = new ArrayList<>();
+        int x = 1003;
+        for (int i = 0; i < 4; i++) {
+            Conversation c = new Conversation();
+            c.channelID = String.valueOf(x);
+            c.channelType = CS.ChannelType.Person;
+            c.unreadCount = 2;
+            updateConversations.add(c);
+        }
+        printList(updateConversations);
+        YutakStore yutakStore1 = new YutakStore();
+    }
+    private static void printList(List<Conversation> conversations) {
+        for (Conversation conversation : conversations) {
+            System.out.println(conversation.channelID+"unreadCount:"+conversation.unreadCount);
+        }
     }
 }

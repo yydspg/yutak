@@ -2,12 +2,12 @@ package com.yutak.im.domain;
 
 public class Conversation {
         public String UID               ; // User UID (user who belongs to the most recent session)
-        public String ChannelID         ; // Conversation channel
-        public byte ChannelType         ;
-        public int UnreadCount          ;    // Number of unread messages
-        public long Timestamp           ;  // Last session timestamp (10 digits)
-        public int LastMsgSeq           ; // Sequence number of the last message
-        public String LastClientMsgNo   ; // Last message client number
-        public long LastMsgID           ;  // Last message ID
-        public long Version             ;  // Data version
+        public String channelID         ; // Conversation channel
+        public int channelType         ;
+        public int unreadCount          ;    // Number of unread messages
+        public long timestamp           ;  // Last session timestamp (10 digits)
+        public int lastMsgSeq           ; // Sequence number of the last message
+        public String lastClientMsgNo   ; // Last message client number
+        public long lastMsgID           ;  // Last message ID
+        public long version             ;  // Data version
 }

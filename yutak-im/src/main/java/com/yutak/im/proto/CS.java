@@ -102,4 +102,8 @@ public interface CS {
         byte topic = 1 << 3;
         byte stream = 1 << 2;
     }
+    interface ConnType{
+        int tcp = 0;
+        int websocket = 1;
+    }
 }

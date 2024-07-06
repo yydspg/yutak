@@ -29,7 +29,6 @@ public class YutakNetServer {
     public Map<String,Boolean> IPBlockList ;
     private final YutakStore yutakStore;
     private NetServer netServer;
-    public Vertx vertx;
     public AtomicLong ID; ;
     private final static YutakNetServer yutakNetServer;
     private final Logger log = LoggerFactory.getLogger(YutakNetServer.class);
@@ -39,10 +38,10 @@ public class YutakNetServer {
     private YutakNetServer() {
         status = new Status();
         status.inboundMessages = new AtomicLong(0);
+        status.outboundMessages = new AtomicLong(0);
         connectManager = ConnectManager.get();
         IPBlockList = new ConcurrentHashMap<>();
         startTime = LocalDateTime.now();
-        vertx = Vertx.vertx();
         ID = new AtomicLong(0);
         yutakStore = YutakStore.get();
         channelManager = ChannelManager.get();
@@ -66,7 +65,7 @@ public class YutakNetServer {
     }
 
     public void addBlockIp(List<String> ip) {
-        if(ip == null || ip.isEmpty()) {
+        if( ip.isEmpty()) {
             return;
         }
         Set<String> set = IPBlockList.keySet();

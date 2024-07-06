@@ -14,7 +14,7 @@ public class ReqKit {
         try {
             return r.request().getParam(k);
         } catch (Exception e) {
-            ResKit.error(r,"parse body params error");
+            ResKit.error(r,"parse path params error");
         }
         return null;
     }

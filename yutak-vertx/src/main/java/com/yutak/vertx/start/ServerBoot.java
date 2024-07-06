@@ -8,22 +8,18 @@ import io.vertx.core.Vertx;
 import io.vertx.core.VertxException;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.eventbus.EventBusOptions;
+import io.vertx.core.http.ServerWebSocket;
 import io.vertx.ext.web.Router;
+import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Objects;
 import java.util.function.Consumer;
-
+@Slf4j
 public class ServerBoot {
 
-    public static void start(String basepackages, Integer httpPort, Consumer<VertxMvcRouterHandler> before, Consumer<VertxMvcRouterHandler> after) {
-        VertxHttpServerConfig serverConfig = new VertxHttpServerConfig();
 
-        serverConfig.setHttpPort(httpPort);
-        serverConfig.setBasePackages(basepackages);
-        start(serverConfig, before, after);
-    }
     // config vertx,before means do something before server start ,after is same
     public static void start(VertxHttpServerConfig serverConfig, Consumer<VertxMvcRouterHandler> before, Consumer<VertxMvcRouterHandler> after) {
         // build server config
@@ -31,7 +27,14 @@ public class ServerBoot {
         VertxMvcRouterHandler vertxMvcRouterHandler = new VertxMvcRouterHandler(serverConfig);
         VertxHttpServerVerticle vertxHttpServerVerticle = new VertxHttpServerVerticle(vertxMvcRouterHandler, after);
         before.accept(vertxMvcRouterHandler);
-        serverConfig.getVertx().deployVerticle(vertxHttpServerVerticle);
+        serverConfig.getVertx().deployVerticle(vertxHttpServerVerticle).onComplete(t->{
+            if (t.succeeded()) {
+                log.info("yutak ==> Http verticle deployed");
+            }
+            else {
+                log.error("yutak ==> Http verticle deploy failed", t.cause());
+            }
+        });
     }
     private static void resolveDefaultServerConfig(VertxHttpServerConfig serverConfig) {
         // set base package
@@ -68,6 +71,11 @@ public class ServerBoot {
         // set router
         if (Objects.isNull(serverConfig.getRouter())) {
             serverConfig.setRouter(Router.router(serverConfig.getVertx()));
+        }
+        // set websocket server
+        if (Objects.isNull(serverConfig.serverSocketHandler)){
+            // default is auto close
+            serverConfig.setServerSocketHandler(ServerWebSocket::close);
         }
     }
 

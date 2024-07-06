@@ -56,10 +56,10 @@ public interface Store {
     void removeSystemUIDs(List<String> systemUIDs);
     List<String> getSystemUIDs();
     // message stream
-    void saveStreamMeta(Stream.Meta meta);
+//    void saveStreamMeta(Stream.Meta meta);
     void streamEnd(String channelID,byte channelType,String streamNo);
-    Stream.Meta getStreamMeta(String channelID,byte channelType,String streamNo);
-    int appendStreamItem(String channelID,byte channelType,String streamNo,Stream.Item item);
+//    Stream.Meta getStreamMeta(String channelID,byte channelType,String streamNo);
+//    int appendStreamItem(String channelID,byte channelType,String streamNo,Stream.Item item);
     List<Res.StreamItem> getStreamItems(String channelID, byte channelType, String streamNo);
     // ip
     void addIpBlockList(List<String> ips);

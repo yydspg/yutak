@@ -88,6 +88,31 @@ public class Req {
         public String uid;
         public int lastMessageSeq;
     }
+    public static class DeleteConversation extends Conversation {
+
+    }
+    public static class CleanConversationUnread extends Conversation {
+        public int messageSeq;
+    }
+    public static class SetConversationUnread extends Conversation {
+        public int messageSeq;
+        public int unread;
+    }
+    public static class Conversation{
+        public String uid;
+        public String channelID;
+        public int channelType;
+    }
+    public static class ChannelRecentMsg {
+        public String channelID;
+        public int channelType;
+        public int lastMsgSeq;
+    }
+    public static class SyncRecentMsg {
+        public String UID;
+        public int msgCount;
+        public List<ChannelRecentMsg> recentMsgs;
+    }
     public static void main(String[] args) {
         SendMessage sendMessage = new SendMessage();
         sendMessage.header = new MessageHeader();

@@ -1,8 +1,6 @@
 package com.yutak.im.core;
 
-import com.yutak.im.domain.CommonChannel;
-import com.yutak.im.domain.Conn;
-import com.yutak.im.domain.Message;
+import com.yutak.im.domain.*;
 import com.yutak.im.proto.CS;
 import com.yutak.im.proto.Packet;
 import com.yutak.im.proto.RecvPacket;
@@ -22,11 +20,9 @@ public class DeliveryManager {
     private ChannelManager channelManager;
     private ConnectManager connectManager;
     private Options options;
-    private Vertx vertx;
     private final  static DeliveryManager instance = new DeliveryManager();
     private final AtomicLong ID = new AtomicLong(0);
     private DeliveryManager() {
-        vertx = YutakNetServer.get().vertx;
         connectManager = ConnectManager.get();
 
     }
@@ -48,13 +44,13 @@ public class DeliveryManager {
 
     // process msg,set this method public aim to used in http
     public void routeMsg(List<Message> message, List<String> subscribers, Map<String,Integer> syncOnceMsgSeq,String fromUID,String fromDeviceUID,int fromDeviceFlag) {
-        if(message.size() == 0|| subscribers.size() == 0) return;
+        if(message.isEmpty() || subscribers.isEmpty()) return;
 
         List<Conn> conns = new ArrayList<>();
         for(String subscriber : subscribers) {
             if(!subscriber.equals(fromUID)) {
                 List<Conn> connect = connectManager.getConnect(subscriber);
-                if(connect != null && connect.size() > 0) {
+                if(connect != null && !connect.isEmpty()) {
                     conns.addAll(connectManager.getConnect(subscriber));
                 }
             }
@@ -86,13 +82,20 @@ public class DeliveryManager {
         //statistics layer
         conn.outMsgs.getAndIncrement();
 
-        if(packets == null || packets.size() == 0)return;
+        if(packets == null || packets.isEmpty())return;
         log.info("real data out{}",packets);
-        for (int i = 0; i < packets.size(); i++) {
+        for (Packet packet : packets) {
             try {
-                conn.netSocket.write(packets.get(i).encode());
+                if (conn instanceof TcpConn) {
+                    ((TcpConn) conn).netSocket.write(packet.encode());
+                    break;
+                }
+                if (conn instanceof WSConn) {
+                    ((WSConn) conn).webSocket.write(packet.encode());
+                    break;
+                }
             } catch (Exception e) {
-                e.printStackTrace();
+                log.error(e.getMessage(), e);
             }
         }
     }

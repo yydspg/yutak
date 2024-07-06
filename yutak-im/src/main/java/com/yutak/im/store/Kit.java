@@ -27,6 +27,9 @@ public class Kit {
     public static byte[] buildDenyListKey(String channelID,byte channelType) {
         return (Config.denylistPrefix+channelID+"-"+channelType).getBytes(StandardCharsets.UTF_8);
     }
+    public static byte[] buildConversationKey(String uid) {
+        return (Config.conversationPrefix+uid).getBytes(StandardCharsets.UTF_8);
+    }
     public static byte[] encode(JsonObject o) {
         return o.encode().getBytes(StandardCharsets.UTF_8);
     }

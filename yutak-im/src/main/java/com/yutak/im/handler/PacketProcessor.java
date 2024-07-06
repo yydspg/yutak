@@ -1,9 +1,7 @@
 package com.yutak.im.handler;
 
 import com.yutak.im.core.*;
-import com.yutak.im.domain.Channel;
-import com.yutak.im.domain.CommonChannel;
-import com.yutak.im.domain.Conn;
+import com.yutak.im.domain.*;
 import com.yutak.im.kit.BufferKit;
 import com.yutak.im.kit.SecurityKit;
 import com.yutak.im.kit.SocketKit;
@@ -18,6 +16,7 @@ import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.http.WebSocket;
 import io.vertx.core.net.NetSocket;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,7 +32,6 @@ public class PacketProcessor {
     private final Logger log;
     private final YutakNetServer yutakNetServer;
     private final DeliveryManager deliveryManager;
-    private Vertx vertx;
     private final YutakStore yutakStore;
     byte[] types = {CS.FrameType.PING,CS.FrameType.SEND,CS.FrameType.RECVACK, (byte) CS.FrameType.SUB};
     private PacketProcessor() {
@@ -41,7 +39,6 @@ public class PacketProcessor {
         log = LoggerFactory.getLogger(this.getClass());
         connectManager = ConnectManager.get();
         channelManager = ChannelManager.get();
-        vertx = YutakNetServer.get().vertx;
         options = Options.get();
         deliveryManager = DeliveryManager.get();
         yutakStore = YutakStore.get();
@@ -56,8 +53,9 @@ public class PacketProcessor {
         return instance;
     }
 
-    public Handler<Buffer> pipe(NetSocket s) {
+    public Handler<Buffer> pipe(YutakSocket s) {
         return b -> {
+
             // 1. statistics layer
             get().statistics().handle(b);
             // decode layer
@@ -87,7 +85,7 @@ public class PacketProcessor {
                 // other packet
             } else {
                 // check connect status,build connect id by socketKit
-                Conn conn = connectManager.getConnect(SocketKit.ipToLong(s.remoteAddress().host()));
+                Conn conn = connectManager.getConnect(SocketKit.ipToLong(s.remoteAddress.host()));
 
                 if(conn == null) {
                     log.error("please connect first");
@@ -102,7 +100,14 @@ public class PacketProcessor {
             }
         };
     }
-
+    public Handler<Void> close(YutakSocket s) {
+        return  event->{
+            String ip = s.remoteAddress.hostAddress();
+            long l = SocketKit.ipToLong(ip);
+            ConnectManager.get().removeConnect(l);
+            s.close();
+        };
+    }
     private Handler<Buffer> statistics() {
         return b -> {
             byte fixHeader = b.getByte(0);
@@ -113,7 +118,7 @@ public class PacketProcessor {
         };
     }
     // can run in event loop
-    private Handler<Promise<ConnAckPacket>> connect(NetSocket s,ConnectPacket connectPacket) {
+    private Handler<Promise<ConnAckPacket>> connect(YutakSocket s,ConnectPacket connectPacket) {
         return promise -> {
             // auth blocking execute !!!
                     // verify client key
@@ -179,7 +184,8 @@ public class PacketProcessor {
                                         p.reasonCode = CS.ReasonCode.ConnectKick;
                                         p.reason = "login in other device";
                                         // send disconnect packet
-                                        conn.netSocket.write(p.encode());
+                                        // TODO  :  here should use delivery Manager
+//                                        conn.netSocket.write(p.encode());
                                     }
                                     conn.close();
                                 });
@@ -196,15 +202,17 @@ public class PacketProcessor {
                             }
                         }
                         // build Conn
-                        Conn conn = new Conn(SocketKit.ipToLong(s.remoteAddress().host()), s.remoteAddress().host(), s);
-                        conn.auth = true;
-                        conn.deviceFlag = connectPacket.deviceFlag;
-                        conn.deviceID = connectPacket.deviceID;
-                        conn.uid = connectPacket.UID;
-                        conn.deviceLevel = connectPacket.deviceFlag;
-                        conn.maxIdle = options.maxIdle;
-                        // add conn in memory
-                        connectManager.addConnect(conn);
+                        // check connect type
+                        if (s.type == CS.ConnType.tcp) {
+                            TcpConn conn = new TcpConn(SocketKit.ipToLong(s.remoteAddress.host()),s.remoteAddress.host(),s.socket,connectPacket);
+                            // TODO  :  device level not implementation
+                            // add conn in memory
+                            connectManager.addConnect(conn);
+                        } else if (s.type == CS.ConnType.websocket) {
+                            WSConn conn = new WSConn(SocketKit.ipToLong(s.remoteAddress.host()),s.remoteAddress.host(),s.webSocket,connectPacket);
+                            // add conn in memory
+                            connectManager.addConnect(conn);
+                        }
 
                         ConnAckPacket p = new ConnAckPacket();
                         BufferKit.encodeFixHeader(p);
@@ -324,6 +332,7 @@ public class PacketProcessor {
         PongPacket p = new PongPacket();
         p.frameType = CS.FrameType.PONG;
         Buffer b = p.encode();
-        conn.netSocket.write(b);
+        // TODO  : same as before
+//        conn.netSocket.write(b);
     }
 }

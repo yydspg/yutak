@@ -36,14 +36,8 @@ public class SystemApi {
                 return;
             }
             List<String> list = ips.getList();
-            yutakStore.addIPBlockList(list).whenComplete((r,e)->{
-                if (e != null) {
-                    ResKit.error(ctx,"add ip list error");
-                    return;
-                }
-                list.forEach(ip -> {YutakNetServer.get().IPBlockList.put(ip,true);});
-                ResKit.success(ctx);
-            });
+            YutakNetServer.get().addBlockIp(list);
+            ResKit.success(ctx);
         };
     }
     @RouteMapping(path = "/block/remove",method = HttpMethod.POST)
@@ -60,12 +54,12 @@ public class SystemApi {
                 return;
             }
             List<String> list = ips.getList();
-            yutakStore.removeIPBlockList(list);
-            list.forEach(ip -> {YutakNetServer.get().IPBlockList.remove(ip);});
+            YutakNetServer.get().removeBlockIp(list);
             ResKit.success(ctx);
         };
     }
-    @RouteMapping(path = "/block/list",method = HttpMethod.GET,block = false)
+    // TODO  :  need load block list ip when server start right now
+    @RouteMapping(path = "/block/list",method = HttpMethod.GET)
     public Handler<RoutingContext> listBlock() {
         return ctx -> {
             ResKit.success(ctx,YutakNetServer.get().IPBlockList.keySet());

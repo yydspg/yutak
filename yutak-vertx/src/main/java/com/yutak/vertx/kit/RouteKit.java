@@ -65,6 +65,7 @@ public class RouteKit {
             }
             Object res = method.invoke(instance);
             if(res instanceof Handler) {
+                //set handler
                 routeInfo.setMethodHandler((Handler<RoutingContext>) res);
                 return;
             }

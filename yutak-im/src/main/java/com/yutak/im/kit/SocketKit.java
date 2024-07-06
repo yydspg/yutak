@@ -25,6 +25,9 @@ public class SocketKit {
         Buffer buffer = Buffer.buffer();
         buffer.setString(0, msg);
     }
+    public static String buildFakeK(String from,String to) {
+        return from + "@" + to;
+    }
     public static void main(String[] args) {
         ScheduledThreadPoolExecutor s = new ScheduledThreadPoolExecutor(1);
         AtomicInteger a = new AtomicInteger();

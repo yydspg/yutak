@@ -6,11 +6,13 @@ import java.time.LocalDateTime;
 public class Options {
     public long ID            ;      // 节点ID
     public String Mode        ;      // 模式 debug 测试 release 正式 bench 压力测试
-    public String HTTPAddr    ;      // http api的监听地址 默认为 0.0.0.0:5001
-    public String Addr        ;      // tcp监听地址 例如：tcp://0.0.0.0:5100
     public String RootDir     ;      // 根目录
     public String DataDir     ;      // 数据目录
-//    public String GinMode     ;      // gin框架的模式
+    public int HttpPort       ;      // http server start port
+    public int TcpPort        ;      // tcp server start port
+    public int WSPort         ;     // websocket listen port
+    public String HttpAddr    ;      // http api的监听地址 默认为 0.0.0.0:5001
+    public String TcpAddr     ;      // tcp监听地址 例如：tcp://0.0.0.0:5100
     public String WSAddr      ;      // websocket 监听地址 例如：ws://0.0.0.0:5200
     public String WSSAddr     ;      // wss 监听地址 例如：wss://0.0.0.0:5210 websocket security
     public boolean tokenAuthOn;  // 是否开启token验证 不配置将根据mode属性判断 debug模式下默认为false release模式为true
@@ -29,6 +31,12 @@ public class Options {
         managerCount.token = "managerToken";
         managerCount.on = true;
         tokenAuthOn = false;
+        HttpPort = 10001;
+        HttpAddr = "127.0.0.1";
+        TcpPort = 10002;
+        TcpAddr = "127.0.0.1";
+        WSPort = 10003;
+        WSAddr = "127.0.0.1";
     }
     public static Options get() {return options;}
     public static class WSSConfig {
