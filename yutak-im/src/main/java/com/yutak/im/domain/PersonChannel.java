@@ -1,10 +1,7 @@
 package com.yutak.im.domain;
 
-import com.yutak.im.proto.Packet;
-
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.locks.ReentrantLock;
 
 public class PersonChannel extends Channel {
     //  example :"AAA@BBB"

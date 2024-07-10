@@ -1,6 +1,9 @@
 package com.yutak.im.store;
 
-import com.yutak.im.domain.*;
+import com.yutak.im.domain.Conversation;
+import com.yutak.im.domain.Message;
+import com.yutak.im.domain.PersonChannel;
+import com.yutak.im.domain.Res;
 import com.yutak.im.proto.CS;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;

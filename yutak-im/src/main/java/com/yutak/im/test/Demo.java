@@ -1,16 +1,13 @@
 package com.yutak.im.test;
 
 
-import com.yutak.im.core.ChannelManager;
-import com.yutak.im.domain.Channel;
-import com.yutak.im.proto.CS;
-import com.yutak.im.store.H2Store;
-import com.yutak.im.store.Store;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 
-import javax.swing.*;
-import java.util.concurrent.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 public class Demo {
     public Handler<String> d1(String str, Vertx vertx) {

@@ -32,6 +32,7 @@ public class RecvPacket extends Packet {
         Buffer b = Buffer.buffer();
         byte fixHeader = BufferKit.encodeFixHeader(this);
         b.appendByte(fixHeader)
+                .appendInt(messageSeq)
                 .appendByte(setting)
                 .appendByte((byte) msgKey.length())
                 .appendString(msgKey)
@@ -48,7 +49,6 @@ public class RecvPacket extends Packet {
                 .appendInt(streamSeq)
                 .appendByte(streamFlag)
                 .appendLong(messageID)
-                .appendInt(messageSeq)
                 .appendInt(timestamp)
                 .appendByte((byte) topic.length())
                 .appendString(topic)
@@ -59,6 +59,8 @@ public class RecvPacket extends Packet {
     @Override
     public Packet decode( Buffer b) {
         int i = 1,t = 0;
+        messageSeq = b.getInt(i);
+        i += 4;
         setting = b.getByte(i++);
         t = i + b.getByte(i++) + 1;
         msgKey = b.getString(i,t);
@@ -83,8 +85,6 @@ public class RecvPacket extends Packet {
         streamFlag = b.getByte(i++);
         messageID = b.getLong(i);
         i += 8;
-        messageSeq = b.getInt(i);
-        i += 4;
         timestamp = b.getInt(i);
         i += 4;
         t = i + b.getByte(i++) + 1;

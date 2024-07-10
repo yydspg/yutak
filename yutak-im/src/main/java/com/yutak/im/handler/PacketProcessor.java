@@ -1,23 +1,21 @@
 package com.yutak.im.handler;
 
 import com.yutak.im.core.*;
-import com.yutak.im.domain.*;
+import com.yutak.im.domain.CommonChannel;
+import com.yutak.im.domain.Conn;
+import com.yutak.im.domain.TcpConn;
+import com.yutak.im.domain.WSConn;
 import com.yutak.im.kit.BufferKit;
 import com.yutak.im.kit.SecurityKit;
 import com.yutak.im.kit.SocketKit;
 import com.yutak.im.proto.*;
 import com.yutak.im.store.ChannelInfo;
 import com.yutak.im.store.YutakStore;
-import com.yutak.im.store.H2Store;
-import com.yutak.im.store.Store;
 import com.yutak.vertx.kit.StringKit;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
-import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.http.WebSocket;
-import io.vertx.core.net.NetSocket;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -262,7 +260,7 @@ public class PacketProcessor {
         }
 
         channelSendPacketMap.forEach((k, v) -> {
-
+            // Good core link performance
             CommonChannel channel = channelManager.getChannel(v.get(0).channelID, v.get(0).channelType);
             if (channel != null) {
                 // in memory

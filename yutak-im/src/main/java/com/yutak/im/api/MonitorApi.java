@@ -11,7 +11,6 @@ import com.yutak.vertx.kit.ResKit;
 import io.vertx.core.Handler;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
-import lombok.RequiredArgsConstructor;
 
 @RouteHandler("/monitor")
 public class MonitorApi {

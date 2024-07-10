@@ -225,7 +225,7 @@ public class MessageApi {
     }
     //  no blocking code
 
-    private Handler<Promise<Map<String,Object>>> sendMsgChannel(Req.SendMessage req, String channelID, byte channelType, String clientMsgNo, byte streamFlag) {
+    private Handler<Promise<Map<String,Object>>> sendMsgChannel(Req.SendMessage req, String channelID, int channelType, String clientMsgNo, int streamFlag) {
         return promise -> {
             // build message ID
             long msgID = yutakNetServer.ID.getAndIncrement();

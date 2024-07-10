@@ -2,7 +2,6 @@ package com.yutak.im.domain;
 
 import com.yutak.im.proto.ConnectPacket;
 import io.vertx.core.http.ServerWebSocket;
-import io.vertx.core.http.WebSocket;
 
 public class WSConn extends Conn{
     public ServerWebSocket webSocket;

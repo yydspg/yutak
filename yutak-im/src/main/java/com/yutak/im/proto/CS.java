@@ -90,8 +90,8 @@ public interface CS {
         }
     }
     interface Stream {
-        byte start = 0;
-        byte ing = 1;
+        int start = 0;
+        int ing = 1;
         byte end = 2;
     }
     interface Setting {

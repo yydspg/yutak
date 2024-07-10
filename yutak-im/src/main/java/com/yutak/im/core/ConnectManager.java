@@ -1,6 +1,5 @@
 package com.yutak.im.core;
 
-import com.yutak.im.domain.CommonChannel;
 import com.yutak.im.domain.Conn;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;

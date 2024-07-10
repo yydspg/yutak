@@ -123,7 +123,7 @@ public class YutakStore {
     public CompletableFuture<ChannelInfo> getChannelAsync(String channelID,byte channelType) {
         return CompletableFuture.supplyAsync(()-> getChannel(channelID,channelType),executor);
     }
-    public ChannelInfo getChannel(String channelID,byte channelType) {
+    public ChannelInfo getChannel(String channelID,int channelType) {
         if (channelID == null || channelID.length() == 0) return null;
         byte[] V = getV(Kit.slotNum(channelID), Kit.buildChannelKey(channelID, channelType));
         if(V == null) {
@@ -191,20 +191,20 @@ public class YutakStore {
             return  getList(Kit.slotNum(channelID), Kit.buildSubscribeKey(channelID, channelType));
         },executor);
     }
-    public List<String> getSubscribers(String channelID,byte channelType) {
+    public List<String> getSubscribers(String channelID,int channelType) {
         return getList(Kit.slotNum(channelID), Kit.buildSubscribeKey(channelID, channelType));
     }
-    public CompletableFuture<Void> removeAllSubscribers(String channelID,byte channelType) {
+    public CompletableFuture<Void> removeAllSubscribers(String channelID,int channelType) {
         return CompletableFuture.runAsync(()->{
             delK(Kit.slotNum(channelID), Kit.buildSubscribeKey(channelID, channelType));
         },executor);
     }
-    public CompletableFuture<List<String>> getAllowListAsync(String channelID,byte channelType) {
+    public CompletableFuture<List<String>> getAllowListAsync(String channelID,int channelType) {
         return CompletableFuture.supplyAsync(()->{
             return  getList(Kit.slotNum(channelID), Kit.buildAllowListKey(channelID, channelType));
         },executor);
     }
-    public List<String> getAllowList(String channelID,byte channelType) {
+    public List<String> getAllowList(String channelID,int channelType) {
         return  getList(Kit.slotNum(channelID), Kit.buildAllowListKey(channelID, channelType));
     }
     public CompletableFuture<Void> addAllowList(String channelID,byte channelType,List<String> uids) {
@@ -227,7 +227,7 @@ public class YutakStore {
             return getList(Kit.slotNum(channelID), Kit.buildDenyListKey(channelID, channelType));
         },executor);
     }
-    public List<String> getDenyList(String channelID,byte channelType) {
+    public List<String> getDenyList(String channelID,int channelType) {
         return getList(Kit.slotNum(channelID), Kit.buildDenyListKey(channelID, channelType));
     }
     public CompletableFuture<Void> addDenyList(String channelID,byte channelType,List<String> uids) {

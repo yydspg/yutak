@@ -5,7 +5,6 @@ import com.yutak.im.proto.CS;
 import com.yutak.im.proto.RecvPacket;
 import com.yutak.im.store.YutakStore;
 import com.yutak.vertx.kit.StringKit;
-import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 
@@ -17,7 +16,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class CommonChannel extends Channel {
     public String id;
-    public byte type;
+    public int type;
     // 0 means false ,1 means true
     public byte ban;
     public byte large;

@@ -9,7 +9,6 @@ import io.vertx.core.net.NetServer;
 import io.vertx.core.net.NetSocket;
 
 import javax.sql.DataSource;
-import java.util.Properties;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 

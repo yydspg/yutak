@@ -7,7 +7,6 @@ import com.yutak.im.proto.RecvPacket;
 import com.yutak.im.proto.SendPacket;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
-import io.vertx.core.Vertx;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.ArrayList;

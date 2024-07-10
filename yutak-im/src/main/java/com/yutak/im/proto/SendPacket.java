@@ -2,7 +2,6 @@ package com.yutak.im.proto;
 
 import com.yutak.im.kit.BufferKit;
 import io.vertx.core.buffer.Buffer;
-import lombok.SneakyThrows;
 
 public class SendPacket extends Packet {
     public byte setting;

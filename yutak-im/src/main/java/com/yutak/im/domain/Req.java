@@ -3,7 +3,6 @@ package com.yutak.im.domain;
 import com.yutak.im.store.ChannelInfo;
 import io.vertx.core.json.Json;
 
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 

@@ -1,7 +1,6 @@
 package com.yutak.im.domain;
 
 import com.yutak.im.proto.ConnectPacket;
-import io.vertx.core.http.WebSocket;
 import io.vertx.core.net.NetSocket;
 
 public class TcpConn extends Conn {

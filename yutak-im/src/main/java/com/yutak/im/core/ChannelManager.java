@@ -49,7 +49,7 @@ public class ChannelManager {
         log.info("yutak ==> ChannelManager destroyed");
     }
 
-    public CommonChannel getChannel(String id, byte type) {
+    public CommonChannel getChannel(String id, int type) {
         if (id.contains(tmpChannelPrefix)) {
             return tmpChannels.get(id + "-" + type);
         }
@@ -68,7 +68,7 @@ public class ChannelManager {
         return personChannels.get(fakeChannelID);
     }
 
-    public CommonChannel getOrCreateDataChannel(String id, byte type) {
+    public CommonChannel getOrCreateDataChannel(String id, int type) {
         // in memory
         CommonChannel c = dataChannels.get(id + "-" + type);
         if (c == null) {
@@ -78,12 +78,12 @@ public class ChannelManager {
         return dataChannels.get(id + "-" + type);
     }
 
-    public CommonChannel getChannelFromCache(String id, byte type) {
+    public CommonChannel getChannelFromCache(String id, int type) {
         return channels.get(id + "-" + type);
     }
 
     // this is the key api
-    public CompletableFuture<CommonChannel> getChannelAsync(String id, byte type) {
+    public CompletableFuture<CommonChannel> getChannelAsync(String id, int type) {
         return CompletableFuture.supplyAsync(() -> {
             if (getChannel(id, type) != null) {
                 return getChannel(id, type);

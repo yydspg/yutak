@@ -1,6 +1,7 @@
 package com.yutak.im.domain;
 
 import com.yutak.im.proto.RecvPacket;
+import io.vertx.core.buffer.Buffer;
 
 import java.util.List;
 
@@ -13,6 +14,18 @@ public class Message {
     public byte large;
     public int index;
     public long pri;
-    public int retryNum;
+    public int retryNum; // retry count
     public String toDeviceID;
+
+    public byte[] encode(){
+        return recvPacket.encode().getBytes();
+    }
+    // aim for storage
+    public Message decode(byte[] b){
+        RecvPacket r = new RecvPacket();
+        Buffer buffer = Buffer.buffer(b);
+        r.decode(buffer);
+        recvPacket = r;
+        return this;
+    }
 }

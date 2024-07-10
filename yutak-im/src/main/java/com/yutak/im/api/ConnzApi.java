@@ -2,7 +2,6 @@ package com.yutak.im.api;
 
 import com.yutak.im.core.ConnectManager;
 import com.yutak.im.domain.Conn;
-import com.yutak.im.domain.Req;
 import com.yutak.im.domain.Res;
 import com.yutak.im.proto.CS;
 import com.yutak.vertx.anno.RouteHandler;
@@ -14,7 +13,6 @@ import com.yutak.vertx.kit.StringKit;
 import io.vertx.core.Handler;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
-import lombok.RequiredArgsConstructor;
 
 import java.util.ArrayList;
 import java.util.List;
