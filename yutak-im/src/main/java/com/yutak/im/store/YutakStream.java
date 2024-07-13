@@ -12,10 +12,12 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
 import java.util.concurrent.locks.ReentrantLock;
 @Slf4j
-public class Stream {
+public class YutakStream {
     public String topicDir;
     public String streamNo;
     public FileChannel streamFile;
@@ -24,12 +26,81 @@ public class Stream {
     private ReentrantLock streamLock;
     private ReentrantLock streamMetaLock;
     public boolean maxStreamSeqLoaded;
-    public Stream(String streamNo,String topicDir) {
+    private ByteBuffer buffer;
+    public YutakStream(String streamNo, String topicDir) {
         streamLock = new ReentrantLock();
         streamMetaLock = new ReentrantLock();
         this.streamNo = streamNo;
         this.topicDir = topicDir;
         maxStreamSeqLoaded = false;
+        // TODO  :  this size should according to use config
+        buffer = ByteBuffer.allocate(256);
+    }
+    public int appendItem(Model.StreamItem item) {
+        streamLock.lock();
+        try {
+            int seq = nextStreamSeq();
+            item.streamSeq = seq;
+            buffer.clear();
+            buffer.put(item.encode());
+            buffer.flip();
+            streamFile.write(buffer);
+            return seq;
+        } catch (IOException e) {
+            log.error(e.getMessage());
+        }finally {
+            streamLock.unlock();
+        }
+        return 0;
+    }
+    public List<Model.StreamItem> readItems() {
+        streamLock.lock();
+        try{
+            ArrayList<Model.StreamItem> items = new ArrayList<>();
+            long startOffset = 0;
+            buildStreamFile();
+            if (streamFile.size() == 0) {
+                return null;
+            }
+            long fileSize = streamFile.size();
+            while(startOffset < fileSize) {
+                Model.StreamItem item = currentItem(startOffset);
+                if (item == null) {
+                    break;
+                }
+                items.add(item);
+                startOffset += item.size;
+            }
+            return items;
+        } catch (IOException e) {
+            log.error(e.getMessage());
+        } finally{
+            streamLock.unlock();
+        }
+        return null;
+    }
+    private Model.StreamItem currentItem(long offset) {
+        try {
+            buffer.clear();
+            int read = streamFile.read(buffer, offset);
+            if (read != -1) {
+                byte[] a = buffer.array();
+                Model.StreamItem s = new Model.StreamItem();
+                s.decode(a);
+                return s;
+            }
+        } catch (IOException e) {
+            log.error(e.getMessage(), e);
+        }
+        return null;
+    }
+    private int nextStreamSeq() {
+        if (maxStreamSeqLoaded) {
+            return maxStreamSeq +1;
+        }
+        maxStreamSeq = readMaxStreamSeq();
+        maxStreamSeqLoaded = true;
+        return maxStreamSeq +1;
     }
     private int readMaxStreamSeq() {
         long startOffset = 0;
@@ -41,15 +112,21 @@ public class Stream {
             }
             long fileSize = streamFile.size();
             while(startOffset < fileSize) {
-
+                Model.StreamItem item = currentItem(startOffset);
+                if (item == null) {
+                    break;
+                }
+                maxStreamSeq = item.streamSeq;
+                startOffset += item.size;
             }
+            return maxStreamSeq;
         } catch (IOException e) {
             log.error(e.getMessage());
         }
         return 0;
     }
 
-    private Model.StreamMeta readMeta() {
+    public  Model.StreamMeta readMeta() {
         streamMetaLock.lock();
         try {
             buildStreamMetaFile();
@@ -76,7 +153,7 @@ public class Stream {
         return null;
     }
     // this method only use once
-    private void saveMeta(Model.StreamMeta data) {
+    public  void saveMeta(Model.StreamMeta data) {
         streamMetaLock.lock();
         try{
             buildStreamMetaFile();
@@ -91,7 +168,7 @@ public class Stream {
             streamMetaLock.unlock();
         }
     }
-    private void streamEnd() {
+    public void end() {
         Model.StreamMeta meta = readMeta();
         if (meta != null) {
             meta.streamFlag = CS.Stream.end;

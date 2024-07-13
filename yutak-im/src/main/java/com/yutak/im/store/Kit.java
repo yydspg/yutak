@@ -32,6 +32,10 @@ public class Kit {
     public static byte[] buildConversationKey(String uid) {
         return (Config.conversationPrefix+uid).getBytes(StandardCharsets.UTF_8);
     }
+    public static String buildTopicKey(String channelID,int channelType) {
+        return channelID+"-"+channelType;
+    }
+
     public static byte[] encode(JsonObject o) {
         return o.encode().getBytes(StandardCharsets.UTF_8);
     }

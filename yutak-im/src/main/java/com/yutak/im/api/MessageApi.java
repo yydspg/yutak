@@ -8,6 +8,8 @@ import com.yutak.im.domain.Req;
 import com.yutak.im.domain.Res;
 import com.yutak.im.proto.CS;
 import com.yutak.im.proto.RecvPacket;
+import com.yutak.im.store.Model;
+import com.yutak.im.store.YutakMsgStore;
 import com.yutak.im.store.YutakStore;
 import com.yutak.vertx.anno.RouteHandler;
 import com.yutak.vertx.anno.RouteMapping;
@@ -34,12 +36,14 @@ public class MessageApi {
     private final DeliveryManager deliveryManager;
     private final ChannelManager channelManager;
     private final YutakStore yutakStore;
+    private final YutakMsgStore yutakMsgStore;
     private final YutakNetServer yutakNetServer;
     public MessageApi() {
         channelManager = ChannelManager.get();
         deliveryManager = DeliveryManager.get();
         yutakStore = YutakStore.get();
         yutakNetServer = YutakNetServer.get();
+        yutakMsgStore = YutakMsgStore.get();
     }
 
     // send message
@@ -101,6 +105,7 @@ public class MessageApi {
                 ResKit.error(ctx,"no invalid data info");
                 return;
             }
+
 //            int readIndex = store.getMessageOfUserCursor(s.uid);
 //            int startIndex = s.messageSeq;
 //            if(startIndex <= 0) {
@@ -139,7 +144,7 @@ public class MessageApi {
                 ResKit.error(ctx,"uid is empty");
                 return;
             }
-//            store.updateMessageOfUserCursorNeed(s.uid,s.lastMessageSeq);
+            // TODO  :  here need to be impl
             ResKit.success(ctx);
         };
     }
@@ -161,7 +166,7 @@ public class MessageApi {
                 clientMsgNo = UUIDKit.get();
             }
             String streamNo = UUIDKit.get();
-            byte streamType = CS.Stream.start;
+            byte streamFlag = CS.Stream.start;
             Req.SendMessage m = new Req.SendMessage();
             m.channelID = s.channelID;
             m.payload = s.payload;
@@ -170,12 +175,27 @@ public class MessageApi {
             m.header = s.header;
             m.fromUID = s.fromUID;
             m.channelType = s.channelType;
-//            ResKit.success(ctx);
-
+            Future.future(sendMsgChannel(m,s.channelID,s.channelType,clientMsgNo,streamFlag)).onComplete((t)->{
+                if(t.failed()) {
+                    ResKit.error(ctx,"send message failed");
+                    return;
+                }
+                Model.StreamMeta sm = new Model.StreamMeta();
+                sm.streamNo = streamNo;
+                sm.channelID = s.channelID;
+                sm.channelType = s.channelType;
+                sm.streamFlag = streamFlag;
+                sm.messageSeq = (int) t.result().get("messageSeq");
+                sm.messageID = (long) t.result().get("messageId");
+                yutakMsgStore.saveStreamMetaAsync(sm);
+            });
+            JsonObject j = new JsonObject();
+            j.put("streamNo",streamNo);
+            ResKit.success(ctx,j);
         };
     }
     // stream send msg end
-    @RouteMapping(path = "/stream/end",method = HttpMethod.POST)
+    @RouteMapping(path = "/stream/end",method = HttpMethod.POST,block = true)
     public Handler<RoutingContext> streamEnd() {
         return ctx -> {
             Req.StreamEnd s = ReqKit.getObjectInBody(ctx, Req.StreamEnd.class);
@@ -183,12 +203,19 @@ public class MessageApi {
                 ResKit.error(ctx,"no invalid data info");
                 return;
             }
+            Model.StreamMeta meta = yutakMsgStore.getStreamMeta(s.channelId, s.channelType, s.streamNo);
+            if(meta == null) {
+                ResKit.error(ctx,"no invalid channelID");
+                return;
+            }
+            meta.streamFlag = CS.Stream.end;
+            yutakMsgStore.saveStreamMeta(meta);
             ResKit.success(ctx);
         };
     }
 
     // query message
-    @RouteMapping(path = "/messages",method = HttpMethod.POST)
+    @RouteMapping(path = "/query",method = HttpMethod.POST,block = true)
     public Handler<RoutingContext> messages() {
         return ctx -> {
             Req.QueryMessage q = ReqKit.getObjectInBody(ctx, Req.QueryMessage.class);
@@ -207,10 +234,10 @@ public class MessageApi {
             ArrayList<Message> messages = new ArrayList<>();
 
             q.seqs.forEach(s->{
-//                Message msg = store.loadMessage(q.channelId, q.channelType, s);
-//                if(msg != null) {
-//                    messages.add(msg);
-//                }
+                Message message = yutakMsgStore.loadMessage(q.channelId, q.channelType, s);
+                if(message != null) {
+                    messages.add(message);
+                }
             });
             ArrayList<Res.Msg> msgs = new ArrayList<>();
             if (messages.size() > 0) {

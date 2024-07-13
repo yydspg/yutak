@@ -76,6 +76,23 @@ public class Segment {
         }
         return 0;
     }
+    public Message readAt(int messageSeq) {
+        lock.lock();
+        try{
+            Index.MessageSeqPosition pos = index.lookup(messageSeq);
+
+        }finally {
+            lock.unlock();
+        }
+        return null;
+    }
+    private long readTargetPosition(long startPos,int targetMessageSeq) {
+        if (startPos > fileSize) {
+            log.error("over size");
+            return 0;
+        }
+        return 0;
+    }
     public void force(){
         try {
             segmentFile.force(true);

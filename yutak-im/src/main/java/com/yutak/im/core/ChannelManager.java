@@ -17,8 +17,8 @@ public class ChannelManager {
     private final ConcurrentHashMap<String, CommonChannel> tmpChannels;
     // if subscribers == 0 ,remove from dataChannels
     private final ConcurrentHashMap<String, CommonChannel> dataChannels;
-    private final Cache<String, CommonChannel> channels;
-    private final Cache<String, CommonChannel> personChannels;
+    private final LRU<String, CommonChannel> channels;
+    private final LRU<String, CommonChannel> personChannels;
     private static ChannelManager instance;
     private final ThreadPoolExecutor executor;
     private Logger log = LoggerFactory.getLogger(ChannelManager.class);
@@ -28,10 +28,10 @@ public class ChannelManager {
     }
 
     private ChannelManager() {
-        this.channels = new Cache<>("Channel-Cache", 10000);
+        this.channels = new LRU<>(1000);
         this.tmpChannels = new ConcurrentHashMap<>();
         this.dataChannels = new ConcurrentHashMap<>();
-        this.personChannels = new Cache<>("Person-Cache", 10000);
+        this.personChannels = new LRU<>(1000);
         yutakStore = YutakStore.get();
         executor = new ThreadPoolExecutor(5, 8, 10, TimeUnit.SECONDS, new LinkedBlockingQueue<>());
     }
@@ -42,8 +42,8 @@ public class ChannelManager {
 
     public void destroy() {
         executor.shutdown();
-        personChannels.destroy();
-        channels.destroy();
+        personChannels.clear();
+        channels.clear();
         tmpChannels.clear();
         dataChannels.clear();
         log.info("yutak ==> ChannelManager destroyed");
@@ -174,9 +174,9 @@ public class ChannelManager {
     }
 
     public int getChannelNum() {
-        return channels.getSize();
+        return channels.size();
     }
     public int getPersonChannelNum() {
-        return personChannels.getSize();
+        return personChannels.size();
     }
 }

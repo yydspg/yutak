@@ -42,3 +42,15 @@ vertx-web此框架基于netty,所以对tcp和websocket的支持完善,对Buffer�
     ]
 }
 ```
+- 2024.7.12
+### feat
+提供了android的SDK,支持websocket,支持消息持久化，支持最近会话，支持流式消息，提供消息详情查询demo,提供monitor接口，目前接口文档\
+
+### refactor
+使用 jconsole 工具调试后,发现在较低qps下，自定义的 Cache 依然存在较高的heap 内存占用，导致频繁gc,因此舍弃，全部使用LRU
+优化msg的持久化，采用segments和index的模式，所以rocksdb仅用于存储类似 channel的meta信息，对msgStore和Store的method提供sync,和Async的实现,利于上层的接口实现或者二次开发
+目前对与全链路未采用 Interceptor的拦截，在yutak-vertx中,这是已经实现的功能,所以对于之后的鉴权,易于升级
+
+## summarize
+目前系统还是存在较多的bug和设计思路的错误,本人错误估计了工作量和期末课业的压力，致使比赛中途暂停15天之久,但是项目的总体设计正确,以后要对系统整体健壮性提升,目前的架构是不支持分布式的,后续也会想对
+一些地方进行重构，希望在未来能达到商用标准，感谢老师百忙之中点评本人的菜鸟作品.appreciate!

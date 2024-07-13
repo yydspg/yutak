@@ -48,6 +48,7 @@ public class ChannelApi {
                 ResKit.error(ctx,"channelType not support person");
                 return;
             }
+            // TODO  :  here should be sync
             // add
 //            store.addOrUpdateChannel(c.channelInfo);
             yutakStore.addOrUpdateChannel(c.channelInfo);

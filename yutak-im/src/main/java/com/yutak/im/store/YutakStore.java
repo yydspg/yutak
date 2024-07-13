@@ -34,7 +34,7 @@ public class YutakStore {
     }
 
     private YutakStore() {
-        executor = new ThreadPoolExecutor(10, 30, 200, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>());
+        executor = new ThreadPoolExecutor(5, 10, 200, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>());
         // index slotNum means default ColumFamilyHandle
         slotHandles = new ArrayList<>(Config.slotNum+1);
 
@@ -135,24 +135,28 @@ public class YutakStore {
         c.disband = V[2];
         return c;
     }
-    public CompletableFuture<JsonObject> getUserToken(String uid,byte deviceFlag) {
-        return CompletableFuture.supplyAsync(()->{
-            if (uid == null) return null;
-            byte[] v = getV(Kit.slotNum(uid), Kit.buildUserTokenKey(uid, deviceFlag));
-            if(v == null) {
-                return null;
-            }
-            return Kit.decodeObj(v);
+    public JsonObject getUserToken(String uid,byte deviceFlag){
+        if (uid == null) return null;
+        byte[] v = getV(Kit.slotNum(uid), Kit.buildUserTokenKey(uid, deviceFlag));
+        if(v == null) {
+            return null;
+        }
+        return Kit.decodeObj(v);
+    }
+    public CompletableFuture<JsonObject> getUserTokenAsync(String uid,byte deviceFlag) {
+        return CompletableFuture.supplyAsync(()-> getUserToken(uid,deviceFlag),executor);
+    }
+    public CompletableFuture<Void> updateUserTokenAsync(String uid,int deviceFlag,byte deviceLevel,String token) {
+        return CompletableFuture.runAsync(()->{
+          updateUserToken(uid,deviceFlag,deviceLevel,token);
         },executor);
     }
-    public CompletableFuture<Void> updateUserToken(String uid,int deviceFlag,byte deviceLevel,String token) {
-        return CompletableFuture.runAsync(()->{
-            if (uid == null) return;
-            JsonObject o = new JsonObject();
-            o.put("deviceLevel",deviceLevel);
-            o.put("token",token);
-            putKV(Kit.slotNum(uid),Kit.buildUserTokenKey(uid, deviceFlag),Kit.encode(o));
-        },executor);
+    public void updateUserToken(String uid,int deviceFlag,byte deviceLevel,String token) {
+        if (uid == null) return;
+        JsonObject o = new JsonObject();
+        o.put("deviceLevel",deviceLevel);
+        o.put("token",token);
+        putKV(Kit.slotNum(uid),Kit.buildUserTokenKey(uid, deviceFlag),Kit.encode(o));
     }
     public CompletableFuture<Void> addOrUpdateChannel(ChannelInfo channelInfo) {
         return CompletableFuture.runAsync(()->{
@@ -175,15 +179,21 @@ public class YutakStore {
             delK(Kit.slotNum(channelID), Kit.buildChannelKey(channelID, channelType));
         },executor);
     }
-    public CompletableFuture<Void> addSubscribers(String channelID,byte channelType,List<String> uids) {
+    public void addSubscribers(String channelID,byte channelType,List<String> uids){
+        putList(Kit.slotNum(channelID),Kit.buildSubscribeKey(channelID,channelType),uids);
+    }
+    public CompletableFuture<Void> addSubscribersAsync(String channelID,byte channelType,List<String> uids) {
         return CompletableFuture.runAsync(()->{
-            putList(Kit.slotNum(channelID),Kit.buildSubscribeKey(channelID,channelType),uids);
+            addSubscribers(channelID,channelType,uids);
         },executor);
     }
-    public CompletableFuture<Void> removeSubscribers(String channelID,byte channelType,List<String> uids) {
-            return CompletableFuture.runAsync(()->{
-                if (channelID == null || channelID.length() == 0 || uids == null || uids.size() == 0) return;
-                delList(Kit.slotNum(channelID),Kit.buildSubscribeKey(channelID, channelType),uids);
+    public void removeSubscribers(String channelID,byte channelType,List<String> uids){
+        if (channelID == null || channelID.isEmpty() || uids == null || uids.isEmpty()) return;
+        delList(Kit.slotNum(channelID),Kit.buildSubscribeKey(channelID, channelType),uids);
+    }
+    public CompletableFuture<Void> removeSubscribersAsync(String channelID,byte channelType,List<String> uids) {
+        return CompletableFuture.runAsync(()->{
+            removeSubscribers(channelID,channelType,uids);
             },executor);
     }
     public CompletableFuture<List<String>> getSubscribersAsync(String channelID,byte channelType) {
@@ -194,9 +204,12 @@ public class YutakStore {
     public List<String> getSubscribers(String channelID,int channelType) {
         return getList(Kit.slotNum(channelID), Kit.buildSubscribeKey(channelID, channelType));
     }
-    public CompletableFuture<Void> removeAllSubscribers(String channelID,int channelType) {
+    public void removeAllSubscribers(String channelID,int channelType){
+        delK(Kit.slotNum(channelID), Kit.buildSubscribeKey(channelID, channelType));
+    }
+    public CompletableFuture<Void> removeAllSubscribersAsync(String channelID,int channelType) {
         return CompletableFuture.runAsync(()->{
-            delK(Kit.slotNum(channelID), Kit.buildSubscribeKey(channelID, channelType));
+            removeAllSubscribers(channelID,channelType);
         },executor);
     }
     public CompletableFuture<List<String>> getAllowListAsync(String channelID,int channelType) {
@@ -238,6 +251,31 @@ public class YutakStore {
     public CompletableFuture<Void> removeDenyList(String channelID,byte channelType,List<String> uids) {
         return CompletableFuture.runAsync(()->{
             delList(Kit.slotNum(channelID), Kit.buildDenyListKey(channelID, channelType),uids);
+        },executor);
+    }
+    public CompletableFuture<Void> appendMessageOfNotifyQueueAsync(List<Message> messages) {
+        return CompletableFuture.runAsync(()->{
+
+        },executor);
+    }
+    public List<Message> getMessageOfNotifyQueue(int count) {
+        return null;
+    }
+    public CompletableFuture<List<Message>> getMessageOfNotifyQueueAsync(int count) {
+        return CompletableFuture.supplyAsync(()->{
+            return null;
+        },executor);
+    }
+    public void appendMessageOfNotifyQueue(List<Message> messages) {
+
+    }
+
+    public void removeMessagesOfNotifyQueue(List<Long> messagesIDs) {
+
+    }
+    public CompletableFuture<Void> removeMessagesOfNotifyQueueAsync(List<Long> messagesIDs) {
+        return CompletableFuture.runAsync(()->{
+
         },executor);
     }
     public CompletableFuture<Void> removeAllDenyList(String channelID,byte channelType) {
@@ -284,6 +322,9 @@ public class YutakStore {
         }
         return getList(Kit.slotNum(uid),Kit.buildConversationKey(uid));
     }
+    public CompletableFuture<List<Conversation>> getConversationsAsync(String uid) {
+        return CompletableFuture.supplyAsync(()-> getConversations(uid),executor);
+    }
     public Conversation getConversation(String uid,String channelID,int channelType) {
         List<Conversation> conversations = getConversations(uid);
         if (conversations == null || conversations.isEmpty()) return null;
@@ -294,14 +335,10 @@ public class YutakStore {
         }
         return null;
     }
-    public CompletableFuture<List<Conversation>> getConversationsAsync(String uid) {
-        return CompletableFuture.supplyAsync(()-> getList(Kit.slotNum(uid),Kit.buildConversationKey(uid)),executor);
+    public CompletableFuture<Conversation> getConversationAsync(String uid,String channelID,int channelType) {
+        return CompletableFuture.supplyAsync(()-> getConversation(uid,channelID,channelType),executor);
     }
-    public CompletableFuture<Void> deleteConversationAsync(String uid,String channelID,int channelType) {
-        return CompletableFuture.runAsync(()->{
-            deleteConversation(uid,channelID,channelType);
-        });
-    }
+
     public void deleteConversation(String uid,String channelID,int channelType) {
         List<Conversation> list = getConversations(uid);
         if(list == null||list.isEmpty()){
@@ -315,10 +352,16 @@ public class YutakStore {
         }
         putList(Kit.slotNum(uid),Kit.buildConversationKey(uid),update);
     }
-    private List<Conversation> buildNewConversations(String uid,List<Conversation> updateConversations) {
+    public CompletableFuture<Void> deleteConversationAsync(String uid,String channelID,int channelType) {
+        return CompletableFuture.runAsync(()->{
+            deleteConversation(uid,channelID,channelType);
+        },executor);
+    }
+    public  List<Conversation> addOrUpdateConversations(String uid,List<Conversation> updateConversations) {
         // no conversation
         List<Conversation> oldConversations = getConversations(uid);
         if (oldConversations == null || oldConversations.isEmpty()) {
+            putList(Kit.slotNum(uid),Kit.buildConversationKey(uid),updateConversations);
             return updateConversations;
         }
         // has old conversation info
@@ -341,6 +384,9 @@ public class YutakStore {
             }
         }
         return newConversations;
+    }
+    public CompletableFuture<List<Conversation>> addOrUpdateConversationsAsync(String uid,List<Conversation> updateConversations) {
+        return CompletableFuture.supplyAsync(()->addOrUpdateConversations(uid,updateConversations),executor);
     }
     private void delList(int slotNum,byte[] K,List list) {
         byte[] v = getV(slotNum, K);
