@@ -1,0 +1,7 @@
+1. README_GAME.md 为本人比赛说明文档
+2. yutak-web 后续业务系统
+3. yutak-im 为此次项目的核心,即时消息发送系统
+4. yutak-vertx 为本人模拟springboot编写的框架
+5. yutak-orm 后续业务的service层
+6. api 包含本次 系统的接口文档,包含md,json形式
+7. data 为rockdb的存储目录

@@ -106,29 +106,6 @@ public class Cache<K,V> {
         flags.clear();
         size.getAndSet(0);
     }
-    public static void main(String[] args) throws InterruptedException {
-        Cache<String, String> l = new Cache<>("test-demo");
-        List<String> list = new ArrayList<>(1000);
-        int j =0;
-        while(j < 1001) {
-            j++;
-            list.add(generateRandomString(11));
-        }
-        int i = 0;
-        while(i < 1001) {
-            l.put(list.get(i), "what can i say");
-            i++;
-        }
-        new ScheduledThreadPoolExecutor(2).scheduleAtFixedRate(()->{
-            Random r = new Random();
-            for (int k = 0; k < 2000; k++) {
-                int o = r.nextInt(1001);
-                l.get(list.get(o));
-            }
-        },1,1000,TimeUnit.MILLISECONDS);
-//        AtomicInteger atomicInteger = new AtomicInteger(0);
-//        System.out.println(atomicInteger.decrementAndGet());
-    }
     public static String generateRandomString(int length) {
         // 定义字符集
         String charSet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";

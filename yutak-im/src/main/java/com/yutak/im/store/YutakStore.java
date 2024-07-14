@@ -124,7 +124,7 @@ public class YutakStore {
         return CompletableFuture.supplyAsync(()-> getChannel(channelID,channelType),executor);
     }
     public ChannelInfo getChannel(String channelID,int channelType) {
-        if (channelID == null || channelID.length() == 0) return null;
+        if (StringKit.isEmpty(channelID)) return null;
         byte[] V = getV(Kit.slotNum(channelID), Kit.buildChannelKey(channelID, channelType));
         if(V == null) {
             return null;
@@ -158,15 +158,18 @@ public class YutakStore {
         o.put("token",token);
         putKV(Kit.slotNum(uid),Kit.buildUserTokenKey(uid, deviceFlag),Kit.encode(o));
     }
-    public CompletableFuture<Void> addOrUpdateChannel(ChannelInfo channelInfo) {
+    public CompletableFuture<Void> addOrUpdateChannelAsync(ChannelInfo channelInfo) {
         return CompletableFuture.runAsync(()->{
-            if (channelInfo == null || channelInfo.channelId == null || channelInfo.channelId.length() == 0) return;
-            byte[] v = new byte[3];
-            v[0] = channelInfo.ban;
-            v[1] = channelInfo.large;
-            v[2] = channelInfo.disband;
-            putKV(Kit.slotNum(channelInfo.channelId),Kit.buildChannelKey(channelInfo.channelId, channelInfo.channelType),v);
+            addOrUpdateChannel(channelInfo);
         },executor);
+    }
+    public void addOrUpdateChannel(ChannelInfo channelInfo) {
+        if (channelInfo == null || channelInfo.channelId == null || channelInfo.channelId.length() == 0) return;
+        byte[] v = new byte[3];
+        v[0] = channelInfo.ban;
+        v[1] = channelInfo.large;
+        v[2] = channelInfo.disband;
+        putKV(Kit.slotNum(channelInfo.channelId),Kit.buildChannelKey(channelInfo.channelId, channelInfo.channelType),v);
     }
     public CompletableFuture<Boolean> existsChannel(String channelID,byte channelType) {
         return CompletableFuture.supplyAsync(()->{

@@ -3,6 +3,7 @@ package com.yutak.im.api;
 import com.yutak.im.core.ChannelManager;
 import com.yutak.im.core.DeliveryManager;
 import com.yutak.im.core.YutakNetServer;
+import com.yutak.im.domain.CommonChannel;
 import com.yutak.im.domain.Message;
 import com.yutak.im.domain.Req;
 import com.yutak.im.domain.Res;
@@ -47,7 +48,7 @@ public class MessageApi {
     }
 
     // send message
-    @RouteMapping(path = "/send",method = HttpMethod.POST)
+    @RouteMapping(path = "/send",method = HttpMethod.POST,block = true)
     public Handler<RoutingContext> send() {
         return ctx -> {
             Req.SendMessage s = ReqKit.getObjectInBody(ctx, Req.SendMessage.class);
@@ -58,7 +59,7 @@ public class MessageApi {
             // check json info
             // if channelID == null && subscribers.size() > 0, means need to create a tmp channel
             String channelID = s.channelID;
-            byte channelType = s.channelType;
+            int channelType = s.channelType;
             if((channelID == null || channelID.isEmpty() )&& s.subscribers.size() > 0)  {
                 // need to create tmp channel
                 channelID = channelManager.tmpChannelPrefix + UUIDKit.get();
@@ -149,9 +150,10 @@ public class MessageApi {
         };
     }
     // stream send msg start
-    @RouteMapping(path = "/stream/start",method = HttpMethod.POST)
+    @RouteMapping(path = "/stream/start",method = HttpMethod.POST,block = true)
     public Handler<RoutingContext> streamStart() {
         return ctx -> {
+            log.info("current thread:{}", Thread.currentThread().getName());
             Req.StreamStart s = ReqKit.getObjectInBody(ctx, Req.StreamStart.class);
             if(s == null) {
                 ResKit.error(ctx,"no invalid data info");
@@ -175,9 +177,10 @@ public class MessageApi {
             m.header = s.header;
             m.fromUID = s.fromUID;
             m.channelType = s.channelType;
+
             Future.future(sendMsgChannel(m,s.channelID,s.channelType,clientMsgNo,streamFlag)).onComplete((t)->{
                 if(t.failed()) {
-                    ResKit.error(ctx,"send message failed");
+                    ResKit.error(ctx,t.cause().getMessage());
                     return;
                 }
                 Model.StreamMeta sm = new Model.StreamMeta();
@@ -188,10 +191,10 @@ public class MessageApi {
                 sm.messageSeq = (int) t.result().get("messageSeq");
                 sm.messageID = (long) t.result().get("messageId");
                 yutakMsgStore.saveStreamMetaAsync(sm);
+                JsonObject j = new JsonObject();
+                j.put("streamNo",streamNo);
+                ResKit.success(ctx,j);
             });
-            JsonObject j = new JsonObject();
-            j.put("streamNo",streamNo);
-            ResKit.success(ctx,j);
         };
     }
     // stream send msg end
@@ -250,7 +253,7 @@ public class MessageApi {
             ResKit.success(ctx,msgs);
         };
     }
-    //  no blocking code
+    //  blocking code
 
     private Handler<Promise<Map<String,Object>>> sendMsgChannel(Req.SendMessage req, String channelID, int channelType, String clientMsgNo, int streamFlag) {
         return promise -> {
@@ -262,58 +265,64 @@ public class MessageApi {
             if(channelType == CS.ChannelType.Person && StringKit.isEmpty(req.fromUID)) {
                 fakeChannelID = req.fromUID + "@" + channelID;
             }
-            channelManager.getChannelAsync(fakeChannelID,channelType).whenComplete((channel, e) -> {
-                if(e != null) {
-                    log.error("get channel error {}", e.getMessage());
-                    promise.fail(e.getMessage());
-                    return;
-                }
-                if(channel == null) {
-                    log.error("no channel found,{}", channelID);
-                    promise.fail("no channel found");
-                    return;
-                }
-                // if channel is large ,send message options contains syncOnce and need persist --> not support
-                if (channel.large == 1 &&(req.header.syncOnce == 1 && req.header.noPersist == 0)) {
-                    log.error("channel {} not support syncOnce {} and noPersist {} ops", channelID, req.header.syncOnce, req.header.noPersist);
-                    promise.fail("channel " + channelID + " not support syncOnce " + req.header.noPersist);
-                    return;
-                }
-                // remove redundant element
-                HashSet<String> subscribers = new HashSet<>(req.subscribers);
 
-                // set stream setting
-                byte setting = 0;
-                if (StringKit.isNotEmpty(req.streamNo)) {
-                    setting = CS.Setting.stream;
+            CommonChannel channel = channelManager.getChannelSync(fakeChannelID, channelType);
+            if(channel == null) {
+                log.error("no channel found,{}", channelID);
+                promise.fail("no channel found");
+                return;
+            }
+            // if channel is large ,send message options contains syncOnce and need persist --> not support
+            if (channel.large == 1 &&(req.header.syncOnce == 1 && req.header.noPersist == 0)) {
+                log.error("channel {} not support syncOnce {} and noPersist {} ops", channelID, req.header.syncOnce, req.header.noPersist);
+                promise.fail("channel " + channelID + " not support syncOnce " + req.header.noPersist);
+                return;
+            }
+            HashSet<String> subscribers = null;
+            // remove redundant element
+            if (req.subscribers == null || req.subscribers.isEmpty()) {
+                subscribers = new HashSet<>();
+            }else{
+                subscribers = new HashSet<>(req.subscribers);
+            }
+            // set stream setting
+            byte setting = 0;
+            if (StringKit.isNotEmpty(req.streamNo)) {
+                setting = CS.Setting.stream;
+            }
+            // build message
+            Message msg = buildMessage(req, setting, msgID,clientMsgNo, subscribers);
+
+            List<Message> list = List.of(msg);
+            log.debug("start steam store or message store");
+            // need persist  do not sync once ,not tmp channel
+            if(msg.recvPacket.noPersist == 0 && msg.recvPacket.syncOnce == 0 && !channelManager.isTmpChannel(channelID)) {
+
+                // stream message
+                if(msg.recvPacket.streamFlag == CS.Stream.ing) {
+                    // store the stream item
+                    Model.StreamItem item = new Model.StreamItem();
+                    item.clientMsgNo = msg.recvPacket.clientMsgNo;
+                    item.blob = msg.recvPacket.payload;
+                    msg.recvPacket.streamSeq = yutakMsgStore.appendStreamItem(fakeChannelID, channelType, msg.recvPacket.streamNo, item);
+                }else {
+                    // store message
+                    yutakMsgStore.appendMessages(fakeChannelID,channelType,list);
                 }
-                // build message
-                Message msg = buildMessage(req, setting, msgID,clientMsgNo, subscribers);
+            }
+            // web hook
 
-                List<Message> list = List.of(msg);
-                // need persist  do not sync once ,not tmp channel
-                if(msg.recvPacket.noPersist == 0 && msg.recvPacket.syncOnce == 0 && !channelManager.isTmpChannel(channelID)) {
-
-                    // stream message
-                    if(msg.recvPacket.streamFlag == CS.Stream.ing) {
-                        // store the stream item
-
-                    }else {
-                        // store message
-                    }
-                }
-                // web hook
-
-                // put message to channel
-                Future.future(channel.putMessage(list,subscribers.stream().toList(), req.fromUID,"system", CS.Device.Level.master)).onComplete(m->{
-                    if (m.succeeded()) {
-                        HashMap<String, Object> o = new HashMap<>();
-                        o.put("messageID", msgID);
-                        o.put("messageSeq", msg.recvPacket.messageSeq);
-                        promise.complete(o);
+            // put message to channel
+            Future.future(channel.putMessage(list,subscribers.stream().toList(), req.fromUID,"system", CS.Device.Level.master)).onComplete(m->{
+                if (m.succeeded()) {
+                    HashMap<String, Object> o = new HashMap<>();
+                    o.put("messageID", msgID);
+                    o.put("messageSeq", msg.recvPacket.messageSeq);
+                    promise.complete(o);
+                        return;
                     }
                     promise.fail("put message failed");
-                });
+                    return;
             });
         };
     }
@@ -328,7 +337,7 @@ public class MessageApi {
         r.streamNo = q.streamNo == null ? "" : q.streamNo;
         r.fromUID = q.fromUID == null ? "" : q.fromUID;
         r.channelID = q.channelID == null ? "" : q.channelID;
-        r.channelType = q.channelType;
+        r.channelType = (byte) q.channelType;
         r.expire = q.expire;
         r.topic = "";
         r.clientMsgNo = clientMsgNo;
@@ -338,7 +347,9 @@ public class MessageApi {
         m.recvPacket = r;
         // system channel type
         m.fromDeviceFlag = CS.ChannelType.System;
-        m.subscribers = ss.stream().toList();
+        if (ss != null && !ss.isEmpty()) {
+            m.subscribers = ss.stream().toList();
+        }
         return m;
     }
 }

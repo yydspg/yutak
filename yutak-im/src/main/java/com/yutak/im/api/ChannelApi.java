@@ -32,7 +32,7 @@ public class ChannelApi {
         channelManager = ChannelManager.get();
         yutakStore = YutakStore.get();
     }
-    @RouteMapping(path = "/create",method = HttpMethod.POST)
+    @RouteMapping(path = "/create",method = HttpMethod.POST,block = true)
     public Handler<RoutingContext> create() {
         return ctx -> {
             Req.ChannelCreate c = ReqKit.getObjectInBody(ctx, Req.ChannelCreate.class);
@@ -50,7 +50,7 @@ public class ChannelApi {
             }
             // TODO  :  here should be sync
             // add
-//            store.addOrUpdateChannel(c.channelInfo);
+//            store.addOrUpdateChannelAsync(c.channelInfo);
             yutakStore.addOrUpdateChannel(c.channelInfo);
             // if update channel ,need all subscribers
 //            store.removeAllSubscribers(c.channelInfo.channelId,c.channelInfo.channelType);
@@ -65,7 +65,7 @@ public class ChannelApi {
         };
     }
     // query channel info
-    @RouteMapping(path = "/info",method = HttpMethod.POST)
+    @RouteMapping(path = "/info",method = HttpMethod.POST,block = true)
     public Handler<RoutingContext> info() {
         return ctx -> {
             ChannelInfo c = ReqKit.getObjectInBody(ctx, ChannelInfo.class);
@@ -73,14 +73,10 @@ public class ChannelApi {
                 ResKit.error(ctx,"no  data info");
                 return ;
             }
-//            store.addOrUpdateChannel(c);
+//            store.addOrUpdateChannelAsync(c);
             yutakStore.addOrUpdateChannel(c);
             // update info
-            channelManager.getChannelAsync(c.channelId, c.channelType).whenComplete((channel, err) -> {
-                if(err != null) {
-                    log.error("get channel error:{}", err.getMessage());
-                    return;
-                }
+            CommonChannel channel = channelManager.getChannelSync(c.channelId, c.channelType);
                 if(channel == null) {
                     ResKit.error(ctx,"channel is null");
                     return;
@@ -89,7 +85,6 @@ public class ChannelApi {
                 channel.ban = c.ban;
                 channel.disband = c.disband;
                 ResKit.success(ctx,channel);
-            });
         };
     }
     @RouteMapping(path = "/delete",method = HttpMethod.POST)
@@ -123,9 +118,9 @@ public class ChannelApi {
                     return;
                 }
                 info.ban = 1;
-//            store.addOrUpdateChannel(info);
+//            store.addOrUpdateChannelAsync(info);
 //            store.removeAllSubscribers(channelId, channelType);
-                yutakStore.addOrUpdateChannel(info);
+                yutakStore.addOrUpdateChannelAsync(info);
                 yutakStore.removeAllSubscribers(channelId, channelType);
                 // sync cache
                 channelManager.deleteChannelCache(channelId,channelType);

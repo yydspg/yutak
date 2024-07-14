@@ -61,7 +61,47 @@ public class ChannelManager {
         }
         return getChannelFromCache(id, type);
     }
+    public CommonChannel getChannelSync(String id,int type) {
+        if (getChannel(id, type) != null) {
+            return getChannel(id, type);
+        }
+        // load from store
+        // not in memory
 
+        ChannelInfo info = yutakStore.getChannel(id, type);
+        if (info == null) {
+            // no such channel
+            return null;
+        }
+        CommonChannel c = new CommonChannel();
+        c.id = id;
+        c.type = type;
+        c.ban = info.ban;
+        c.large = info.large;
+        c.disband = info.disband;
+        List<String> subscribers = yutakStore.getSubscribers(id, type);
+        if (subscribers != null) {
+            for (String subscriber : subscribers) {
+                c.addSubscriber(subscriber);
+            }
+        }
+        List<String> denyList = yutakStore.getDenyList(id, type);
+        if (denyList != null) {
+            c.addBlockList(denyList);
+        }
+        List<String> allowList = yutakStore.getAllowList(id, type);
+        if (allowList != null) {
+            c.addWhiteList(allowList);
+        }
+
+        // put into memory
+        if (type == CS.ChannelType.Person) {
+            personChannels.put(id, c);
+        } else {
+            channels.put(id + "-" + type, c);
+        }
+        return c;
+    }
     private CommonChannel getPersonChannel(String fakeChannelID) {
         // in memory
         //todo something error,open im has no this issue
@@ -84,47 +124,7 @@ public class ChannelManager {
 
     // this is the key api
     public CompletableFuture<CommonChannel> getChannelAsync(String id, int type) {
-        return CompletableFuture.supplyAsync(() -> {
-            if (getChannel(id, type) != null) {
-                return getChannel(id, type);
-            }
-            // load from store
-            // not in memory
-
-            ChannelInfo info = yutakStore.getChannel(id, type);
-            if (info == null) {
-                // no such channel
-                return null;
-            }
-            CommonChannel c = new CommonChannel();
-            c.id = id;
-            c.type = type;
-            c.ban = info.ban;
-            c.large = info.large;
-            c.disband = info.disband;
-            List<String> subscribers = yutakStore.getSubscribers(id, type);
-            if (subscribers != null) {
-                for (String subscriber : subscribers) {
-                    c.addSubscriber(subscriber);
-                }
-            }
-            List<String> denyList = yutakStore.getDenyList(id, type);
-            if (denyList != null) {
-                c.addBlockList(denyList);
-            }
-            List<String> allowList = yutakStore.getAllowList(id, type);
-            if (allowList != null) {
-                c.addWhiteList(allowList);
-            }
-
-            // put into memory
-            if (type == CS.ChannelType.Person) {
-                personChannels.put(id, c);
-            } else {
-                channels.put(id + "-" + type, c);
-            }
-            return c;
-        }, executor);
+        return CompletableFuture.supplyAsync(() -> getOrCreateDataChannel(id, type), executor);
     }
 
     public void deleteChannelCache(String channelID, byte channelType) {
@@ -154,7 +154,7 @@ public class ChannelManager {
         }
     }
 
-    public void createTmpChannel(String channelID, byte channelType, List<String> subscribers) {
+    public void createTmpChannel(String channelID, int channelType, List<String> subscribers) {
         String k = channelID + "-" + channelType;
         CommonChannel c = new CommonChannel();
         subscribers.forEach(c::addSubscriber);

@@ -38,6 +38,8 @@ public class Topic {
         appendLock = new ReentrantLock();
         lastMsgSeq = new AtomicInteger(0);
         streamLRU = new LRU<>();
+        segments = new ArrayList<>();
+        initSegments();
         try{
             Path p = Paths.get(topicDir);
             Files.createDirectories(p);
@@ -136,7 +138,8 @@ public class Topic {
         resetActiveSegment(lastBaseMessageSeq);
     }
     private Segment getActiveSegment(){
-        return getSegment(segments.get(segments.size()-1));
+        if (segments.isEmpty()) return null;
+        return getSegment(segments.get(segments.size()-1 ));
     }
     private int nextMsgSeq(){
         return lastMsgSeq.incrementAndGet();
@@ -145,7 +148,7 @@ public class Topic {
         return name + "-" + baseMessageSeq;
     }
     private String topicPath(int slot,String name){
-        return Config.dataDir + slot+"topics/"+name;
+        return Config.msgDir +"/"+ slot+"/"+"topics/"+name;
     }
     // TODO  :  here ,this method need to be use once
     public void initSegments() {
@@ -176,8 +179,13 @@ public class Topic {
     private List<Integer> getAllSegmentsBaseMessageSeq() {
         String logDir = topicDir + "/logs";
         ArrayList<Integer> res = new ArrayList<>();
-        try (Stream<Path> files = Files.list(Paths.get(logDir));) {
-            files.forEach(file -> {
+        Path path = Paths.get(logDir);
+        try{
+        if (!Files.exists(path)) {
+            Files.createDirectories(path);
+            log.info("yutak ==> create directory:{}",logDir);
+        }
+        Files.list(path).forEach(file -> {
                 if (file.getFileName().endsWith(Config.segmentSuffix)) {
                     res.add(Integer.parseInt(file.getFileName().toString()));
                 }

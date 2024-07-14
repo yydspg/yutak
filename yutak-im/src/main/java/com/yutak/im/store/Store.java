@@ -19,7 +19,7 @@ public interface Store {
     ChannelInfo getChannel(String channelID,byte channelType);
 //    PersonChannel getPersonChannel(String channelID);
     void setPersonChannel(PersonChannel personChannel);
-    void addOrUpdateChannel(ChannelInfo channelInfo);
+    void addOrUpdateChannelAsync(ChannelInfo channelInfo);
     void addDataChannel(String channelID,byte channelType);
     boolean existChannel(String channelID,byte channelType);
     void addSubscribers(String channelID, byte channelType, List<String> subscribers);

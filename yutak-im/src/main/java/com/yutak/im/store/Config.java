@@ -9,6 +9,7 @@ public class Config {
     public static String logDir ;
     public static int slotNum;
     public static String dataDir;
+    public static String msgDir;
     public static boolean firstStart;
     public static String rootBucketPrefix;
     public static String messageOfUserCursorPrefix;
@@ -27,7 +28,6 @@ public class Config {
     public static int messageSeqSize;
     public static int messageDataLenSize;
     public static int indexMaxSize;
-    public static FileSystem fileSystem;
     public static String streamSuffix;
     public static String streamMetaSuffix;
     public static String indexSuffix;
@@ -38,6 +38,7 @@ public class Config {
         slotNum = 2;
         dataDir = "./data";
         logDir = "./log";
+        msgDir = "./msg";
         firstStart = false;
         messageOfUserCursorPrefix = "messageOfUserCursor";
         userTokenPrefix = "userToken";
@@ -55,7 +56,6 @@ public class Config {
         messageSeqSize = 8;
         messageDataLenSize = 4;
         indexMaxSize = 2 *1024 *1024; // index file max size 2m
-        fileSystem = YutakIMApplication.vertx.fileSystem();
         streamSuffix = ".stream";
         streamMetaSuffix = ".streamMeta";
         indexSuffix = ".index";

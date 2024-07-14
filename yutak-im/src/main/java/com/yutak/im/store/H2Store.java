@@ -86,7 +86,7 @@ public class H2Store implements Store {
         return hikariDataSource.getConnection().prepareStatement(sql);
     }
     public static void main(String[] args) throws SQLException {
-        H2Store h2Store = new H2Store();
+        H2Store h2Store =null;
         System.out.println(h2Store.getUserToken("123", (byte) 0));
         h2Store.updateUserToken("123","frhjgf0",(byte) 0,(byte)4);
         System.out.println(h2Store.getUserDeviceLevel("123", (byte) 0));
@@ -97,7 +97,7 @@ public class H2Store implements Store {
 //        c.large = true;
 //        c.disband = false;
 //        c.ban = true;
-        h2Store.addOrUpdateChannel(c);
+        h2Store.addOrUpdateChannelAsync(c);
         ArrayList<String> ips = new ArrayList<>();
         ips.add("127.0.0.1");
         ips.add("127.0.0.2");
@@ -232,7 +232,7 @@ public class H2Store implements Store {
     // this statement do not support system info,add system channel can not br used in this statement
     @SneakyThrows
     @Override
-    public void addOrUpdateChannel(ChannelInfo channelInfo) {
+    public void addOrUpdateChannelAsync(ChannelInfo channelInfo) {
         if(existChannel(channelInfo.channelId,channelInfo.channelType)){
             // update
             PreparedStatement p = get(sql.get(5));

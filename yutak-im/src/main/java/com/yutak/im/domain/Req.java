@@ -40,7 +40,7 @@ public class Req {
         public String streamNo;
         public String fromUID;
         public String channelID;
-        public byte channelType;
+        public int channelType;
         public int expire;
         public String payload;
         public List<String> subscribers;
@@ -70,7 +70,7 @@ public class Req {
         public String clientMsgNo;
         public String fromUID;
         public String channelID;
-        public byte channelType;
+        public int channelType;
         public String payload;
     }
     public static class StreamEnd {

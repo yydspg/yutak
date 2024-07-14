@@ -2,10 +2,11 @@ package com.yutak.im.store;
 
 import com.yutak.im.domain.Conversation;
 import com.yutak.im.domain.Message;
+import lombok.extern.slf4j.Slf4j;
 
 import java.util.List;
 import java.util.concurrent.*;
-
+@Slf4j
 public class YutakMsgStore {
     private final ConcurrentHashMap<Integer,Slot> slots;
     public final ThreadPoolExecutor executor; //executor pool
@@ -127,6 +128,7 @@ public class YutakMsgStore {
     }
     // key method
     private Topic getTopic(String channelID, int channelType) {
+        log.info("current topic is {}", channelID);
         String topic = Kit.buildTopicKey(channelID, channelType);
         int slotNum = Kit.slotNum(topic);
         Slot s;

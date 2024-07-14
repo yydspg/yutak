@@ -1,0 +1,816 @@
+{
+	"info": {
+		"_postman_id": "cdf6a58a-5c8b-4a66-b594-408562edfca8",
+		"name": "yutak",
+		"description": "IM system",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "26513918"
+	},
+	"item": [
+		{
+			"name": "channel",
+			"item": [
+				{
+					"name": "create",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"channelInfo\" : {\n        \"channelId\" : \"1234\",\n        \"channelType\" : 2,\n        \"ban\" : 0,\n        \"large\" : 1,\n        \"disband\" : 0\n    },\n    \"subscribers\" : [\n        \"1234\",\n        \"1234\"\n    ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:10001/channel/create",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "10001",
+							"path": [
+								"channel",
+								"create"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "info",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n        \"channelId\" : \"1234\",\n        \"channelType\" : 2,\n        \"ban\" : 0,\n        \"large\" : 1,\n        \"disband\" : 0\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:10001/channel/info",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "10001",
+							"path": [
+								"channel",
+								"info"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "delete",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"channelId\" : \"\",\n    \"channelType\" : 1\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:10001/channel/delete",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "10001",
+							"path": [
+								"channel",
+								"delete"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "subscriber/add",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"channelId\" : \"1234\",\n    \"subscribers\" : [\n        \"1234\",\n        \"fhsb\",\n        \"fga8syfar\"\n    ],\n    \"temp\" : 1,\n    \"channelType\" : 2,\n    \"reset\" : 0\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:10001/channel/subscriber/add",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "10001",
+							"path": [
+								"channel",
+								"subscriber",
+								"add"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "subscriber/del",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"channelId\" : \"1234\",\n    \"subscribers\" : [\n        \"1233\"\n    ],\n    \"temp\" : 1,\n    \"channelType\" :1\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:10001/channel/subscriber/del",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "10001",
+							"path": [
+								"channel",
+								"subscriber",
+								"del"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "block/add",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"channelId\" : \"1234\",\n    \"channelType\" : 2,\n    \"uids\" : [\n        \"2131\"\n    ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:10001/channel/block/add",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "10001",
+							"path": [
+								"channel",
+								"block",
+								"add"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "block/set",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"channelId\" : \"1234\",\n    \"channelType\" : 2,\n    \"uids\" : [\n        \"what can i say\"\n    ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:10001/channel/block/set",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "10001",
+							"path": [
+								"channel",
+								"block",
+								"set"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "block/remove",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"channelId\" : \"1234\",\n    \"channelType\" : 2,\n    \"uids\" : [\n        \"what can i say\"\n    ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:10001/channel/block/remove",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "10001",
+							"path": [
+								"channel",
+								"block",
+								"remove"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "white/add",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"channelId\" : \"1234\",\n    \"channelType\" : 2,\n    \"uids\" : [\n        \"21311\",\n        \"aefwerf\",\n        \"awdwed\"\n    ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:10001/channel/white/add",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "10001",
+							"path": [
+								"channel",
+								"white",
+								"add"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "white/set",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"channelId\" : \"1234\",\n    \"channelType\" : 1,\n    \"uids\" : [\n        \"2131\"\n    ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:10001/channel/white/set",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "10001",
+							"path": [
+								"channel",
+								"white",
+								"set"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "white/remove",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"channelId\" : \"1234\",\n    \"channelType\" : 1,\n    \"uids\" : [\n        \"2131\"\n    ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:10001/channel/white/remove",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "10001",
+							"path": [
+								"channel",
+								"white",
+								"remove"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "white/list",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:10001/channel/white/list?channelId=1234",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "10001",
+							"path": [
+								"channel",
+								"white",
+								"list"
+							],
+							"query": [
+								{
+									"key": "channelId",
+									"value": "1234"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"description": "Abstract channel design, including groups, individuals, communities, channels, data channels, and systems. etc"
+		},
+		{
+			"name": "user",
+			"item": [
+				{
+					"name": "token",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"uid\" : \"\" ,\n    \"token\" : \"\",\n    \"deviceFlag\" : 1,\n    \"deviceLevel\" : 0\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:10001/user/token",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "10001",
+							"path": [
+								"user",
+								"token"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "deviceQuit",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"uid\" : \"23\",\n    \"deviceFlag\" : 0\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:10001/user/deviceQuit",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "10001",
+							"path": [
+								"user",
+								"deviceQuit"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "addSystemUid",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"uids\" : [\n        \"1234\",\n        \"1233\"\n    ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:10001/user/addSystemUid",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "10001",
+							"path": [
+								"user",
+								"addSystemUid"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "delSystemUid",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"uids\" : [\n        \"1234\"\n    ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:10001/user/delSystemUid",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "10001",
+							"path": [
+								"user",
+								"delSystemUid"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "onlineStatus",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"uids\": [\n        \"123\"\n    ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:10001/user/onlineStatus",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "10001",
+							"path": [
+								"user",
+								"onlineStatus"
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"description": "user part"
+		},
+		{
+			"name": "message",
+			"item": [
+				{
+					"name": "send",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"header\":{\n        \"noPersist\":0,\n        \"redDot\":0,\n        \"syncOnce\":0\n    },\n    \"clientMsgNo\":null,\n    \"streamNo\":null,\n    \"fromUID\":\"23\",\n    \"channelID\":null,\n    \"channelType\":0,\n    \"expire\":0,\n    \"payload\":\"MTIzMTIfawergweasrgh\",\n    \"subscribers\":[\n        \"0\",\n        \"1\",\n        \"2\"\n    ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:10001/message/send",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "10001",
+							"path": [
+								"message",
+								"send"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "sync",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"uid\" : \"123\",\n    \"messageSeq\" : 123,\n    \"limit\" : 1\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:10001/message/sync",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "10001",
+							"path": [
+								"message",
+								"sync"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "syncAck",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"uid\" : \"\",\n    \"lastMessageSeq\" : 12\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:10001/message/syncAck",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "10001",
+							"path": [
+								"message",
+								"syncAck"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "stream/start",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"header\" : {\n        \"noPersist\" : true,\n        \"redDot\" : true,\n        \"syncOnce\" : false\n    },\n    \"clientMsgNo\" : \"12\",\n    \"fromUID\" : \"13\",\n    \"channelID\" : \"12\",\n    \"channelType\" : 0,\n    \"payload\" : \"23r2343\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:10001/message/stream/start",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "10001",
+							"path": [
+								"message",
+								"stream",
+								"start"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "stream/end",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"channelId\" : \"123\",\n    \"channelType\" : 1,\n    \"streamNo\" : \"!@3\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:10001/message/stream/end",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "10001",
+							"path": [
+								"message",
+								"stream",
+								"end"
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"description": "message part"
+		},
+		{
+			"name": "system",
+			"item": [
+				{
+					"name": "block/list",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:10001/system/block/list",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "10001",
+							"path": [
+								"system",
+								"block",
+								"list"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "block/remove",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"ips\" :[\n        \"127.0.0.3\"\n    ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:10001/system/block/remove",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "10001",
+							"path": [
+								"system",
+								"block",
+								"remove"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "block/add",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"ips\" : [\n        \"127.0.0.3\",\n        \"127.0.0.2\",\n        \"127.0.0.4\",\n        \"127.0.0.6\"\n    ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:10001/system/block/add",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "10001",
+							"path": [
+								"system",
+								"block",
+								"add"
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"description": "system part"
+		},
+		{
+			"name": "monitor",
+			"item": [
+				{
+					"name": "conn",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:10001/monitor/conn",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "10001",
+							"path": [
+								"monitor",
+								"conn"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "channel",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:10001/monitor/channel",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "10001",
+							"path": [
+								"monitor",
+								"channel"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "message",
+					"request": {
+						"method": "GET",
+						"header": []
+					},
+					"response": []
+				}
+			],
+			"description": "monitor part"
+		}
+	]
+}
